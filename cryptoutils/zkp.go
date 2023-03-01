@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
-	"log"
 	"math/big"
 )
 
@@ -25,6 +24,10 @@ func (p Point) Equal(p2 Point) bool {
 		return true
 	}
 	return false
+}
+
+func (p Point) Marshal(curve elliptic.Curve) []byte {
+	return elliptic.Marshal(curve, p.X, p.Y)
 }
 
 type DlogProof struct {
@@ -52,6 +55,7 @@ func NewDlogProof(curve elliptic.Curve, base, Q Point, sk *big.Int) (*DlogProof,
 	pk_rand_x, pk_rand_y := curve.ScalarMult(base.X, base.Y, sk_rand.Bytes())
 	pk_rand_commitment := elliptic.Marshal(curve, pk_rand_x, pk_rand_y)
 	pk_rand := Point{pk_rand_x, pk_rand_y}
+
 	// A = xG where A{pk_x, pk_y} is the public key
 	// pk_x, pk_y := curve.ScalarMult(base.X, base.Y, sk.Bytes())
 	// pk_commitment := elliptic.Marshal(curve, pk_x, pk_y)
@@ -106,9 +110,6 @@ func (proof *DlogProof) Verify(curve elliptic.Curve, Q Point) (bool, []byte, err
 	if !bytes.Equal(tot, rand_commit) {
 		return false, nil, errors.New("proof's final value and verification value do not agree")
 	}
-
-	log.Println("tot : ", tot)
-	log.Println("proof.RandCommit : ", proof.RandCommit)
 
 	return true, tot, nil
 }
