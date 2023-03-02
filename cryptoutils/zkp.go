@@ -32,9 +32,10 @@ func (p Point) Marshal(curve elliptic.Curve) []byte {
 
 type DlogProof struct {
 	Base        Point
-	RandCommit  Point
-	HiddenValue *big.Int
 	Challenge   *big.Int
+	RandCommit  Point
+	PublicShare Point
+	HiddenValue *big.Int
 }
 
 func NewDlogProof(curve elliptic.Curve, base, Q Point, sk *big.Int) (*DlogProof, error) {
@@ -72,6 +73,7 @@ func NewDlogProof(curve elliptic.Curve, base, Q Point, sk *big.Int) (*DlogProof,
 		Base:        base,
 		RandCommit:  pk_rand,
 		HiddenValue: v,
+		PublicShare: Q,
 		Challenge:   challenge,
 	}
 	return dlp, nil
@@ -87,14 +89,15 @@ func generateChallenge(curveParams curveParams, arr ...[]byte) *big.Int {
 	return challenge
 }
 
-func (proof *DlogProof) Verify(curve elliptic.Curve, Q Point) (bool, []byte, error) {
+// Verify verifies the proof of knowledge of discrete logarithm of an elliptic curve point. Q is the public key.
+func (proof *DlogProof) Verify(curve elliptic.Curve, Q Point) (bool, error) {
 	rand_commit := elliptic.Marshal(curve, proof.RandCommit.X, proof.RandCommit.Y)
 	q_bytes := elliptic.Marshal(curve, Q.X, Q.Y)
 	// Q = xG where Q{pk_x, pk_y} is the public key, RandCommit = uG
 	testChallenge := generateChallenge(curve.Params(), q_bytes, rand_commit)
 
 	if testChallenge.Cmp(proof.Challenge) != 0 {
-		return false, nil, errors.New("challenge is not equal to the generated challenge")
+		return false, errors.New("challenge is not equal to the generated challenge")
 	}
 
 	// look at hiddenValue as u from the proof (u - c * x)G
@@ -108,8 +111,8 @@ func (proof *DlogProof) Verify(curve elliptic.Curve, Q Point) (bool, []byte, err
 	tot := elliptic.Marshal(curve, tot_x, tot_y)
 
 	if !bytes.Equal(tot, rand_commit) {
-		return false, nil, errors.New("proof's final value and verification value do not agree")
+		return false, errors.New("proof's final value and verification value do not agree")
 	}
 
-	return true, tot, nil
+	return true, nil
 }

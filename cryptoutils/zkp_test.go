@@ -25,15 +25,14 @@ func TestDlogProof(t *testing.T) {
 	}
 
 	// Q := elliptic.Marshal(curve, Q_x, Q_y)
-	status, tot, err := testProof.Verify(curve, cryptoutils.Point{Q_x, Q_y})
+	status, err := testProof.Verify(curve, QPoint)
 	if err != nil {
-		t.Fatalf("err : %v\n tot : %v\n", err, tot)
+		t.Fatalf("err : %v\n", err)
 	}
 	if !status && err == nil {
 		t.Logf("x : %v\n", x)
 		t.Logf("randPoint : {%v, %v}\n", Q_x, Q_y)
 		t.Logf("testProof : %v\n", testProof)
-		t.Logf("tot : %v\n", tot)
 		t.Fatalf("DlogProof did not generate properly - 1\n")
 	}
 }
