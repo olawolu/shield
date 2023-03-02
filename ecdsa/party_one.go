@@ -1,4 +1,4 @@
-package alice
+package ecdsa
 
 import (
 	"crypto/elliptic"
@@ -9,28 +9,14 @@ import (
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 )
 
-type EcKeyPair struct {
-	PublicShare *cryptoutils.Point
-	secretShare []byte
-}
-
+var (
+	curve = elliptic.P256()
+)
 type CommWitness struct {
 	PkCommitmentBlindFactor *big.Int
 	ZkBlindfactor           *big.Int
 	PublicShare             cryptoutils.Point
 	DlogProof               cryptoutils.DlogProof
-}
-
-// KeyGenFirstMsg is the first message sent during key generation.
-type KeyGenFirstMsg struct {
-	Commitment    *big.Int
-	CommitmentZkp *big.Int
-}
-
-// KeyGenSecondMsg is the second message sent during key generation.
-type KeyGenSecondtMsg struct {
-	Commitment    *big.Int
-	CommitmentZkp *big.Int
 }
 
 type HSMCL struct {
@@ -43,8 +29,7 @@ type Party1Private struct {
 	x1 elliptic.Curve
 }
 
-func CreateCommitment() (fm KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair EcKeyPair, err error) {
-	curve := elliptic.P256()
+func CreateCommitment() (fm P1KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair EcKeyPair, err error) {
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 
 	priv, x, y, err := elliptic.GenerateKey(curve, rand.Reader)
@@ -83,7 +68,7 @@ func CreateCommitment() (fm KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair
 		secretShare: priv,
 	}
 
-	fm = KeyGenFirstMsg{
+	fm = P1KeyGenFirstMsg{
 		Commitment:    pk_commitment,
 		CommitmentZkp: zk_commitment,
 	}
@@ -93,6 +78,21 @@ func CreateCommitment() (fm KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair
 		ZkBlindfactor:           zk_commitment_blind,
 		PublicShare:             publicShare,
 		DlogProof:               *dLogProof,
+	}
+	return
+}
+
+func VerifyAndDecommit(commitWitness CommWitness, proof cryptoutils.DlogProof) (sm P1KeyGenSecondMsg, err error) {
+	status, err := proof.Verify(elliptic.P256(), proof.PublicShare)
+	if err != nil {
+		return
+	}
+	if !status {
+		err = fmt.Errorf("cannot verify dlog proof")
+		return
+	}
+	sm = P1KeyGenSecondMsg{
+		Witness: commitWitness,
 	}
 	return
 }
