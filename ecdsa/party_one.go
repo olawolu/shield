@@ -29,7 +29,7 @@ type Party1Private struct {
 	x1 elliptic.Curve
 }
 
-func CreateCommitment() (fm P1KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair EcKeyPair, err error) {
+func CreatePartyOneCommitment() (fm P1KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair EcKeyPair, err error) {
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 
 	priv, x, y, err := elliptic.GenerateKey(curve, rand.Reader)
@@ -82,7 +82,7 @@ func CreateCommitment() (fm P1KeyGenFirstMsg, commitWitness CommWitness, ecKeyPa
 	return
 }
 
-func VerifyAndDecommit(commitWitness CommWitness, proof cryptoutils.DlogProof) (sm P1KeyGenSecondMsg, err error) {
+func PartyOneVerifyAndDecommit(commitWitness CommWitness, proof cryptoutils.DlogProof) (sm P1KeyGenSecondMsg, err error) {
 	status, err := proof.Verify(elliptic.P256(), proof.PublicShare)
 	if err != nil {
 		return

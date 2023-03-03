@@ -10,7 +10,7 @@ import (
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 )
 
-func Create() (fm P2KeyGenFirstMsg, ecKeyPair EcKeyPair, err error) {
+func PartyTwoCreate() (fm P2KeyGenFirstMsg, ecKeyPair EcKeyPair, err error) {
 	curve := elliptic.P256()
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 
@@ -39,7 +39,7 @@ func Create() (fm P2KeyGenFirstMsg, ecKeyPair EcKeyPair, err error) {
 	return
 }
 
-func VerifyCommitmentAndDlogProof(p1FirstMsg P1KeyGenFirstMsg, p1SecondMsg P1KeyGenSecondMsg) (sm P2KeyGenSecondMsg, err error) {
+func PartyTwoVerifyCommitmentAndDlogProof(p1FirstMsg P1KeyGenFirstMsg, p1SecondMsg P1KeyGenSecondMsg) (sm P2KeyGenSecondMsg, err error) {
 	p1_pk_commitment := p1FirstMsg.Commitment
 	p1_pk_commitment_zkp := p1FirstMsg.CommitmentZkp
 	p1_zk_blind_factor := p1SecondMsg.Witness.ZkBlindfactor
