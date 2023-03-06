@@ -10,7 +10,13 @@ import (
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 )
 
-func PartyTwoCreate() (fm P2KeyGenFirstMsg, ecKeyPair EcKeyPair, err error) {
+type PartyTwo struct{}
+
+func NewPartyTwo() *PartyTwo {
+	return &PartyTwo{}
+}
+
+func (p *PartyTwo) PartyTwoCreate() (fm P2KeyGenFirstMsg, ecKeyPair EcKeyPair, err error) {
 	curve := elliptic.P256()
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 
@@ -39,7 +45,7 @@ func PartyTwoCreate() (fm P2KeyGenFirstMsg, ecKeyPair EcKeyPair, err error) {
 	return
 }
 
-func PartyTwoVerifyCommitmentAndDlogProof(p1FirstMsg P1KeyGenFirstMsg, p1SecondMsg P1KeyGenSecondMsg) (sm P2KeyGenSecondMsg, err error) {
+func (p *PartyTwo) PartyTwoVerifyCommitmentAndDlogProof(p1FirstMsg P1KeyGenFirstMsg, p1SecondMsg P1KeyGenSecondMsg) (sm P2KeyGenSecondMsg, err error) {
 	p1_pk_commitment := p1FirstMsg.Commitment
 	p1_pk_commitment_zkp := p1FirstMsg.CommitmentZkp
 	p1_zk_blind_factor := p1SecondMsg.Witness.ZkBlindfactor
@@ -87,4 +93,43 @@ func PartyTwoVerifyCommitmentAndDlogProof(p1FirstMsg P1KeyGenFirstMsg, p1SecondM
 	}
 
 	return
+}
+
+// VerifySetupAndZkcldlProof verifies the setup and the zero-knowledge proof
+func (p *PartyTwo) VerifySetupAndZkcldlProof(hsmclPublic HSMCLPublic, seed *big.Int, p1PublicKey cryptoutils.Point) (p2hsmcl *PartyTwoHSMCLPublic, err error) {
+	// verify the public key setup
+	if err = hsmclPublic.CLPublicKey.Verify(); err != nil {
+		err = fmt.Errorf("cannot verify the public key setup: %w", err)
+		return
+	}
+
+	if err = hsmclPublic.CLPublicKey.VerifyEnc(hsmclPublic.EncryptedShare); err != nil {
+		err = fmt.Errorf("cannot verify proof: %w", err)
+		return
+	}
+
+	p2hsmcl = &PartyTwoHSMCLPublic{
+		EncryptionKey:  hsmclPublic.CLPublicKey,
+		EncryptedShare: hsmclPublic.EncryptedShare,
+	}
+
+	return
+}
+
+
+// SetPartyOnePrivateKeys sets the private keys for party 1
+func (p *PartyTwo) SetPartyTwoPrivateKeys(ecKey EcKeyPair) Party2Private {
+	return Party2Private{
+		x1:    ecKey.secretShare,
+	}
+}
+
+func (p *PartyTwo) ComputePubKey(local EcKeyPair, otherPartyPublicShare cryptoutils.Point) cryptoutils.Point {
+	// compute the public key
+	x, y := elliptic.P256().ScalarMult(otherPartyPublicShare.X, otherPartyPublicShare.Y, local.secretShare)
+	pk := cryptoutils.Point{
+		X: x,
+		Y: y,
+	}
+	return pk
 }

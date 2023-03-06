@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/homo/cl"
+	"github.com/golang/protobuf/proto"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 )
 
 var (
 	curve = elliptic.P256()
 )
+
 type CommWitness struct {
 	PkCommitmentBlindFactor *big.Int
 	ZkBlindfactor           *big.Int
@@ -19,17 +22,13 @@ type CommWitness struct {
 	DlogProof               cryptoutils.DlogProof
 }
 
-type HSMCL struct {
+type PartyOne struct{}
+
+func NewPartyOne() *PartyOne {
+	return &PartyOne{}
 }
 
-type HSMCLPublic struct {
-}
-
-type Party1Private struct {
-	x1 elliptic.Curve
-}
-
-func CreatePartyOneCommitment() (fm P1KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair EcKeyPair, err error) {
+func (p *PartyOne) CreatePartyOneCommitment() (fm P1KeyGenFirstMsg, commitWitness CommWitness, ecKeyPair EcKeyPair, err error) {
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 
 	priv, x, y, err := elliptic.GenerateKey(curve, rand.Reader)
@@ -82,7 +81,7 @@ func CreatePartyOneCommitment() (fm P1KeyGenFirstMsg, commitWitness CommWitness,
 	return
 }
 
-func PartyOneVerifyAndDecommit(commitWitness CommWitness, proof cryptoutils.DlogProof) (sm P1KeyGenSecondMsg, err error) {
+func (p *PartyOne) PartyOneVerifyAndDecommit(commitWitness CommWitness, proof cryptoutils.DlogProof) (sm P1KeyGenSecondMsg, err error) {
 	status, err := proof.Verify(elliptic.P256(), proof.PublicShare)
 	if err != nil {
 		return
@@ -95,4 +94,57 @@ func PartyOneVerifyAndDecommit(commitWitness CommWitness, proof cryptoutils.Dlog
 		Witness: commitWitness,
 	}
 	return
+}
+
+// GenerateHSMCLKeyPair generates an HSMCL key pair
+func (p *PartyOne) GenerateHSMCL(ecKeyPair EcKeyPair, seed *big.Int) (hsmcl HSMCL, hsmclPublic HSMCLPublic, err error) {
+	safeParameter := 1348
+	c, err := cl.NewCL(big.NewInt(1024), 40, seed, safeParameter, 40)
+	if err != nil {
+		err = fmt.Errorf("cannot create CL: %w", err)
+		return
+	}
+
+	// encrypt the secret share with a defined randomness
+	ciphertext, err := c.Encrypt(ecKeyPair.secretShare)
+	if err != nil {
+		err = fmt.Errorf("cannot encrypt: %w", err)
+		return
+	}
+
+	enryptedMessage := &cl.EncryptedMessage{}
+	err = proto.Unmarshal(ciphertext, enryptedMessage)
+
+	proof := enryptedMessage.Proof
+
+	hsmcl = HSMCL{
+		Cl:             c,
+		EncryptedShare: ciphertext,
+	}
+
+	hsmclPublic = HSMCLPublic{
+		Proof:          proof,
+		CLPublicKey:    c.PublicKey,
+		EncryptedShare: ciphertext,
+	}
+
+	return
+}
+
+// SetPartyOnePrivateKeys sets the private keys for party 1
+func (p *PartyOne) SetPartyOnePrivateKeys(p1KeyPair EcKeyPair, pk HSMCL) Party1Private {
+	return Party1Private{
+		x1:    p1KeyPair.secretShare,
+		hsmcl: pk.Cl,
+	}
+}
+
+func (p *PartyOne) ComputePubKey(p1 Party1Private, p2PublicShare cryptoutils.Point) cryptoutils.Point {
+	// compute the public key
+	x, y := elliptic.P256().ScalarMult(p2PublicShare.X, p2PublicShare.Y, p1.x1)
+	pk := cryptoutils.Point{
+		X: x,
+		Y: y,
+	}
+	return pk
 }

@@ -3,6 +3,7 @@ package ecdsa
 import (
 	"math/big"
 
+	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 )
 
@@ -28,3 +29,28 @@ type P2KeyGenFirstMsg struct {
 }
 
 type P2KeyGenSecondMsg struct{}
+
+type HSMCL struct {
+	Cl             *cl.CL
+	EncryptedShare []byte
+}
+
+type HSMCLPublic struct {
+	CLPublicKey    *cl.PublicKey
+	Proof          *cl.ProofMessage
+	EncryptedShare []byte
+}
+
+type PartyTwoHSMCLPublic struct {
+	EncryptionKey  *cl.PublicKey
+	EncryptedShare []byte
+}
+
+type Party1Private struct {
+	x1    []byte
+	hsmcl *cl.CL
+}
+
+type Party2Private struct {
+	x1 []byte
+}
