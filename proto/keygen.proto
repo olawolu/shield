@@ -1,0 +1,113 @@
+syntax = "proto3";
+package tsslib;
+option go_package = "/ecdsamobile";
+
+message DlogProof {
+    bytes base = 1;
+    bytes challenge = 2;
+    bytes randcommit = 3;
+    bytes publicshare = 4;
+    bytes hiddenvalue = 5;
+}
+
+message EcddhProof {
+    bytes a1 = 1;
+    bytes a2 = 2;
+    bytes z = 3;
+    bytes hashcoice = 4;
+}
+
+message EcddhStatement {
+    bytes g1 = 1;
+    bytes h1 = 2;
+    bytes g2 = 3;
+    bytes h2 = 4;
+}
+
+message EcddhWitness {
+    bytes x = 1;
+}
+
+message P2KeyGenFirstMessage {
+    DlogProof dlnproof = 1;
+    bytes publickey = 2;
+    bytes privatekey = 3;
+}
+
+message P1KeyGenFirstMessage {
+    bytes commitment = 1;
+    bytes commitmentzkp = 2;
+}
+
+message CommitWitness {
+    bytes pkcommitmentblindfactor = 1;
+    bytes zkblindfactor = 2;
+    bytes publicshare = 3;
+    bytes dlogproof = 4;
+}
+
+message P1KeyGenSecondMessage {
+   CommitWitness witness = 1;
+}
+
+message PublicKeyRequest {
+    bytes secretshare = 1;
+    bytes otherpartypublicshare = 2;
+}
+
+message PublicKeyResponse {
+    bytes x = 1;
+    bytes y = 2;
+}
+
+message EphemeralCommitWitness {
+    bytes pkcommitmentblindfactor = 1;
+    bytes zkproofblindfactor = 2;
+    bytes publicshare = 3;
+    EcddhProof dlogproof = 4;
+    bytes c = 5; // c = secretshare*basepoint2
+}
+
+message P1EphemeralKeyGenFirstMessage {
+    bytes ecddhProof = 1;
+    bytes publicshare = 2;
+    bytes c = 3;
+}
+
+message P2EphemeralKeyGenFirstMessage {
+    bytes commitment = 1;
+    bytes commitmentzkp = 2;
+}
+
+message P2EphemeralKeyGenSecondMessage {
+    EphemeralCommitWitness commitwitness = 1;
+}
+
+message EphemeralEcKeyPair {
+    bytes publickey = 1;
+    bytes privatekey = 2;
+}
+
+message P2EphemeralCommitmentsResponse {
+    P2EphemeralKeyGenFirstMessage keygenmsg = 1;
+    EphemeralCommitWitness witness = 2;
+    EphemeralEcKeyPair ephemeralkey = 3;
+}
+
+message EphemeralKeyVerificationInput {
+    P1EphemeralKeyGenFirstMessage keyGenMsg = 1;
+    EphemeralCommitWitness commitWitness = 2;
+}
+
+message PartialSignatureInput {
+    bytes encryptionKey = 1;
+    bytes encryptedShare = 2;
+    bytes localShare = 3;
+    bytes ephemeralSecret = 4;
+    bytes ephemeralRemoteKey = 5;
+    bytes msg = 6; 
+}
+
+message PartialSignatureOutput {
+    bytes C3 = 1;
+}

@@ -8,7 +8,7 @@ import (
 
 type HashCommitment struct{}
 
-const SECURITY_BITS int = 256
+const SECURITY_BITS int = 512
 
 func CreateCommitment(message *big.Int) (commitment, blind_factor *big.Int, err error) {
 	blind_factor = RandomBig(SECURITY_BITS)

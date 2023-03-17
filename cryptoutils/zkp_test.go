@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDlogProof(t *testing.T) {
@@ -16,10 +17,10 @@ func TestDlogProof(t *testing.T) {
 	}
 
 	Q_x, Q_y := curve.ScalarMult(curve.Params().Gx, curve.Params().Gy, x.Bytes())
-	base := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
+	// base := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 	QPoint := cryptoutils.Point{X: Q_x, Y: Q_y}
 
-	testProof, err := cryptoutils.NewDlogProof(curve, base, QPoint, x)
+	testProof, err := cryptoutils.NewDlogProof(curve, Q_x, Q_y, x)
 	if err != nil {
 		t.Fatalf("%v\n", err)
 	}
@@ -35,4 +36,14 @@ func TestDlogProof(t *testing.T) {
 		t.Logf("testProof : %v\n", testProof)
 		t.Fatalf("DlogProof did not generate properly - 1\n")
 	}
+}
+
+func TestPoints(t *testing.T) {
+	base1_1 := cryptoutils.BasePoint(elliptic.P256())
+	base1_2 := cryptoutils.BasePoint(elliptic.P256())
+	assert.Equal(t, base1_1, base1_2)
+
+	base2_1 := cryptoutils.BasePoint2(elliptic.P256())
+	base2_2 := cryptoutils.BasePoint2(elliptic.P256())
+	assert.NotEqual(t, base2_1, base2_2)
 }
