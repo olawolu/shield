@@ -18,16 +18,59 @@ type Point struct {
 	X, Y *big.Int
 }
 
+func NewPoint(x, y *big.Int) Point {
+	return Point{X: x, Y: y}
+}
+
+func BasePoint(curve elliptic.Curve) Point {
+	return Point{X: curve.Params().Gx, Y: curve.Params().Gy}
+}
+
+// BasePoint2 returns a random point on the curve with unknown discrete log
+func BasePoint2(curve elliptic.Curve) Point {
+	hasher := sha256.New()
+	x := new(big.Int).SetBytes([]byte{0x08, 0xd1, 0x32, 0x21, 0xe3, 0xa7, 0x32, 0x6a, 0x34, 0xdd, 0x45, 0x21, 0x4b, 0xa8, 0x01, 0x16,
+		0xdd, 0x14, 0x2e, 0x4b, 0x5f, 0xf3, 0xce, 0x66, 0xa8, 0xdc, 0x7b, 0xfa, 0x03, 0x78, 0xb7, 0x95,
+	})
+	hashedString := hasher.Sum(x.Bytes())
+	hashedString = hasher.Sum(hashedString)
+	Hx, Hy := curve.ScalarMult(curve.Params().Gx, curve.Params().Gy, hashedString)
+	if !curve.IsOnCurve(Hx, Hy) {
+		panic("not on curve")
+	}
+	return Point{X: Hx, Y: Hy}
+}
+
 // Equal returns true if points p (self) and p2 (arg) are the same.
-func (p Point) Equal(p2 Point) bool {
+func (p *Point) Equal(p2 Point) bool {
 	if p.X.Cmp(p2.X) == 0 && p2.Y.Cmp(p2.Y) == 0 {
 		return true
 	}
 	return false
 }
 
-func (p Point) Marshal(curve elliptic.Curve) []byte {
+func (p *Point) Marshal(curve elliptic.Curve) []byte {
 	return elliptic.Marshal(curve, p.X, p.Y)
+}
+
+func (p *Point) Unmarshal(curve elliptic.Curve, data []byte) error {
+	// curve.ScalarBaseMult(data)
+	x, y := elliptic.Unmarshal(curve, data)
+	if x == nil {
+		return errors.New("invalid point")
+	}
+	p.X = x
+	p.Y = y
+	return nil
+}
+
+func (p Point) Chain(curve elliptic.Curve, p2 Point) []byte {
+	buf := new(bytes.Buffer)
+	buf.Write(p.Marshal(curve))
+	buf.Write(p2.Marshal(curve))
+	hash := sha256.New().Sum(buf.Bytes())
+
+	return hash
 }
 
 type DlogProof struct {
@@ -38,42 +81,36 @@ type DlogProof struct {
 	HiddenValue *big.Int
 }
 
-func NewDlogProof(curve elliptic.Curve, base, Q Point, sk *big.Int) (*DlogProof, error) {
-	// curve := elliptic.P256()
+func NewDlogProof(curve elliptic.Curve, x, y, sk *big.Int) (*DlogProof, error) {
 	modValue := new(big.Int).Mod(sk, curve.Params().N)
 
-	// Q = xG where Q{Q_x, Q_y} is the public key
-	Q_x, Q_y := curve.ScalarMult(base.X, base.Y, modValue.Bytes())
-	C := Point{Q_x, Q_y}
-	if !C.Equal(Q) {
+	// Q = sk * G where Q{Q_x, Q_y} is the public key,
+	// G => curve generator, sk => secret key
+	Q_x, Q_y := curve.ScalarBaseMult(modValue.Bytes())
+	if Q_x.Cmp(x) != 0 || Q_y.Cmp(y) != 0 {
 		return nil, errors.New("Q is not equal to xG")
 	}
 
 	// generates a randam point uG,
-	// where u => sk_rand and G => curve generator
+	// where u => random integer in the field and G => curve generator
 	// uG{pk_rand_x, pk_rand_y} is a random point on the curve
-	sk_rand, _ := rand.Int(rand.Reader, curve.Params().N)
-	pk_rand_x, pk_rand_y := curve.ScalarMult(base.X, base.Y, sk_rand.Bytes())
+	u, _ := rand.Int(rand.Reader, curve.Params().N)
+	pk_rand_x, pk_rand_y := curve.ScalarBaseMult(u.Bytes())
 	pk_rand_commitment := elliptic.Marshal(curve, pk_rand_x, pk_rand_y)
 	pk_rand := Point{pk_rand_x, pk_rand_y}
 
-	// A = xG where A{pk_x, pk_y} is the public key
-	// pk_x, pk_y := curve.ScalarMult(base.X, base.Y, sk.Bytes())
-	// pk_commitment := elliptic.Marshal(curve, pk_x, pk_y)
-
-	q_bytes := elliptic.Marshal(curve, Q.X, Q.Y)
-
+	q_bytes := elliptic.Marshal(curve, x, y)
 	challenge := generateChallenge(curve.Params(), q_bytes, pk_rand_commitment)
 
 	// v = u - c * x
-	v := new(big.Int).Sub(sk_rand, new(big.Int).Mul(challenge, modValue))
+	v := new(big.Int).Sub(u, new(big.Int).Mul(challenge, modValue))
 	v = v.Mod(v, curve.Params().N)
 
 	dlp := &DlogProof{
-		Base:        base,
+		Base:        Point{curve.Params().Gx, curve.Params().Gy},
 		RandCommit:  pk_rand,
 		HiddenValue: v,
-		PublicShare: Q,
+		PublicShare: Point{x, y},
 		Challenge:   challenge,
 	}
 	return dlp, nil
@@ -86,6 +123,15 @@ func generateChallenge(curveParams curveParams, arr ...[]byte) *big.Int {
 	}
 	challenge := new(big.Int).SetBytes(hasher.Sum(nil))
 	challenge = new(big.Int).Mod(challenge, curveParams.N)
+	return challenge
+}
+
+func hashChallenge(arr ...[]byte) *big.Int {
+	hasher := sha256.New()
+	for _, v := range arr {
+		hasher.Write(v)
+	}
+	challenge := new(big.Int).SetBytes(hasher.Sum(nil))
 	return challenge
 }
 
