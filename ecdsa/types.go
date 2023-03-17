@@ -1,16 +1,13 @@
 package ecdsa
 
 import (
+	"fmt"
 	"math/big"
 
-	"github.com/getamis/alice/crypto/homo/cl"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/didiercrunch/paillier"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 )
-
-type EcKeyPair struct {
-	PublicShare *cryptoutils.Point
-	secretShare []byte
-}
 
 // KeyGenFirstMsg is the first message sent during key generation.
 type P1KeyGenFirstMsg struct {
@@ -20,37 +17,68 @@ type P1KeyGenFirstMsg struct {
 
 // KeyGenSecondMsg is the second message sent during key generation.
 type P1KeyGenSecondMsg struct {
-	Witness CommWitness
+	Witness CommitWitness
 }
 
 type P2KeyGenFirstMsg struct {
 	DlogProof   cryptoutils.DlogProof
-	PublicShare cryptoutils.Point
+	PublicShare []byte
 }
 
 type P2KeyGenSecondMsg struct{}
 
-type HSMCL struct {
-	Cl             *cl.CL
-	EncryptedShare []byte
+type PaillierKeyPair struct {
+	EncryptionKey  *paillier.PublicKey
+	DecryptionKey  *paillier.PrivateKey
+	EncryptedShare *paillier.Cypher
+	Randomness     *big.Int
 }
 
-type HSMCLPublic struct {
-	CLPublicKey    *cl.PublicKey
-	Proof          *cl.ProofMessage
-	EncryptedShare []byte
+type EphemeralCommitWitness struct {
+	PkCommitmentBlindFactor *big.Int
+	ZkPokBlindfactor        *big.Int
+	PublicShare             []byte
+	DlogProof               cryptoutils.ECDDHProof
+	C                       cryptoutils.Point // C= secretShare*basePoint2
 }
 
-type PartyTwoHSMCLPublic struct {
-	EncryptionKey  *cl.PublicKey
-	EncryptedShare []byte
+type P1EphemeralKeyGenFirstMsg struct {
+	DlogProof   cryptoutils.ECDDHProof
+	PublicShare secp256k1.PublicKey
+	C           cryptoutils.Point
 }
 
-type Party1Private struct {
-	x1    []byte
-	hsmcl *cl.CL
+type P1EphemeralKeyGenSecondMsg struct{}
+
+type P2EphemeralKeyGenFirstMsg struct {
+	PkCommitment    *big.Int
+	ZkPokCommitment *big.Int
 }
 
-type Party2Private struct {
-	x1 []byte
+type P2EphemeralKeyGenSecondMsg struct {
+	CommitWitness EphemeralCommitWitness
+}
+
+type EphEcKeyPair struct {
+	PublicShare []byte
+	SecretShare []byte
+}
+
+type PartialSignature struct {
+	C3 *paillier.Cypher
+}
+
+type Signature struct {
+	R *big.Int
+	S *big.Int
+	V uint
+}
+
+func (s *Signature) Bytes() ([]byte, error) {
+	buf := make([]byte, 0, 65)
+	fmt.Println("signature id: ", byte(s.V))
+	buf = append(buf, s.R.Bytes()...)
+	buf = append(buf, s.S.Bytes()...)
+	buf = append(buf, byte(s.V))
+	return buf, nil
 }
