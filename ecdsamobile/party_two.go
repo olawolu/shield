@@ -9,6 +9,7 @@ import (
 	"github.com/didiercrunch/paillier"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 	"github.com/helicarrierstudio/tss-lib/ecdsa"
+	"google.golang.org/protobuf/proto"
 )
 
 // GenerateKeys wraps around ecdsa.CreatePartyTwoShares()
@@ -28,8 +29,13 @@ func GenerateKeys() (fm P2KeyGenFirstMessage, err error) {
 		Hiddenvalue: kg.DlogProof.HiddenValue.Bytes(),
 	}
 
+	proofBytes, err := proto.Marshal(proof)
+	if err != nil {
+		return
+	}
+
 	fm = P2KeyGenFirstMessage{
-		Dlnproof:   proof,
+		Dlnproof:   proofBytes,
 		Publickey:  kg.PublicShare,
 		Privatekey: secretShare,
 	}
@@ -38,6 +44,7 @@ func GenerateKeys() (fm P2KeyGenFirstMessage, err error) {
 
 func VerifyCommitmentAndDlogProof(p1FirstMsg *P1KeyGenFirstMessage, p1SecondMsg *P1KeyGenSecondMessage) (err error) {
 	p1_first_msg := p1FirstMessageFromProto(p1FirstMsg)
+	// proto.Unmarshal()
 	p1_second_msg, err := p1SecondMessageFromProto(p1SecondMsg)
 	if err != nil {
 		return err
@@ -91,6 +98,11 @@ func CreateEphemeralCommitments() (response P2EphemeralCommitmentsResponse, err 
 		Commitmentzkp: msg.ZkPokCommitment.Bytes(),
 	}
 
+	keygenBytes, err := proto.Marshal(keygen)
+	if err != nil {
+		return
+	}
+
 	p := commit.DlogProof
 	proof := &EcddhProof{
 		A1:        p.A1.Marshal(curve),
@@ -99,22 +111,38 @@ func CreateEphemeralCommitments() (response P2EphemeralCommitmentsResponse, err 
 		Hashcoice: p.HashChoice,
 	}
 
-	commit_witness := &EphemeralCommitWitness{
+	proofBytes, err := proto.Marshal(proof)
+	if err != nil {
+		return
+	}
+
+	commitWitness := &EphemeralCommitWitness{
 		Pkcommitmentblindfactor: commit.PkCommitmentBlindFactor.Bytes(),
 		Zkproofblindfactor:      commit.ZkPokBlindfactor.Bytes(),
 		Publicshare:             commit.PublicShare,
-		Dlogproof:               proof,
+		Dlogproof:               proofBytes,
 		C:                       commit.C.Marshal(curve),
 	}
+
+	commitWitnessBytes, err := proto.Marshal(commitWitness)
+	if err != nil {
+		return
+	}
+
 	ephKey := &EphemeralEcKeyPair{
-		Publickey: key.PublicShare,
+		Publickey:  key.PublicShare,
 		Privatekey: key.SecretShare,
 	}
 
+	ephKeyBytes, err := proto.Marshal(ephKey)
+	if err != nil {
+		return
+	}
+
 	response = P2EphemeralCommitmentsResponse{
-		Keygenmsg:    keygen,
-		Witness:      commit_witness,
-		Ephemeralkey: ephKey,
+		Keygenmsg:    keygenBytes,
+		Witness:      commitWitnessBytes,
+		Ephemeralkey: ephKeyBytes,
 	}
 
 	return
@@ -127,8 +155,21 @@ func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg
 
 	var pubKeyPoint, cPoint *cryptoutils.Point
 
-	pubKey := input.GetKeyGenMsg().GetPublicshare()
-	c := input.GetKeyGenMsg().GetC()
+	var keygenmsg *P1EphemeralKeyGenFirstMessage
+	var witness *EphemeralCommitWitness
+
+	if err = proto.Unmarshal(input.KeyGenMsg, keygenmsg); err != nil {
+		err = fmt.Errorf("cannot unmarshal keygen message: %w", err)
+		return
+	}
+
+	if err = proto.Unmarshal(input.CommitWitness, witness); err != nil {
+		err = fmt.Errorf("cannot unmarshal witness: %w", err)
+		return
+	}
+
+	pubKey := keygenmsg.GetPublicshare()
+	c := witness.GetC()
 
 	if err = pubKeyPoint.Unmarshal(curve, pubKey); err != nil {
 		err = fmt.Errorf("cannot unmarshal public key: %w", err)
@@ -140,7 +181,7 @@ func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg
 		return
 	}
 
-	proofBytes := input.GetKeyGenMsg().GetEcddhProof()
+	proofBytes := keygenmsg.GetEcddhProof()
 
 	proof, err := ecddhProofFromProto(proofBytes)
 	if err != nil {

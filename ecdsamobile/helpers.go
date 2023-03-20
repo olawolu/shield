@@ -96,7 +96,12 @@ func p1FirstMessageFromProto(p1FirstMsg *P1KeyGenFirstMessage) ecdsa.P1KeyGenFir
 }
 
 func p1SecondMessageFromProto(p1SecondMsg *P1KeyGenSecondMessage) (*ecdsa.P1KeyGenSecondMsg, error) {
-	witness := p1SecondMsg.GetWitness()
+	witnessBytes := p1SecondMsg.GetWitness()
+	var witness CommitWitness
+	err := proto.Unmarshal(witnessBytes, &witness)
+	if err != nil {
+		return nil, err
+	}
 	blindFactor := witness.GetPkcommitmentblindfactor()
 	zkBlindFactor := witness.GetZkblindfactor()
 	publicShare := witness.GetPublicshare()

@@ -29,7 +29,7 @@ message EcddhWitness {
 }
 
 message P2KeyGenFirstMessage {
-    DlogProof dlnproof = 1;
+    bytes dlnproof = 1;
     bytes publickey = 2;
     bytes privatekey = 3;
 }
@@ -47,7 +47,7 @@ message CommitWitness {
 }
 
 message P1KeyGenSecondMessage {
-   CommitWitness witness = 1;
+   bytes witness = 1;
 }
 
 message PublicKeyRequest {
@@ -64,7 +64,7 @@ message EphemeralCommitWitness {
     bytes pkcommitmentblindfactor = 1;
     bytes zkproofblindfactor = 2;
     bytes publicshare = 3;
-    EcddhProof dlogproof = 4;
+    bytes dlogproof = 4;
     bytes c = 5; // c = secretshare*basepoint2
 }
 
@@ -80,7 +80,7 @@ message P2EphemeralKeyGenFirstMessage {
 }
 
 message P2EphemeralKeyGenSecondMessage {
-    EphemeralCommitWitness commitwitness = 1;
+    bytes commitwitness = 1;
 }
 
 message EphemeralEcKeyPair {
@@ -89,14 +89,14 @@ message EphemeralEcKeyPair {
 }
 
 message P2EphemeralCommitmentsResponse {
-    P2EphemeralKeyGenFirstMessage keygenmsg = 1;
-    EphemeralCommitWitness witness = 2;
-    EphemeralEcKeyPair ephemeralkey = 3;
+    bytes keygenmsg = 1;
+    bytes witness = 2;
+    bytes ephemeralkey = 3;
 }
 
 message EphemeralKeyVerificationInput {
-    P1EphemeralKeyGenFirstMessage keyGenMsg = 1;
-    EphemeralCommitWitness commitWitness = 2;
+    bytes keyGenMsg = 1;
+    bytes commitWitness = 2;
 }
 
 message PartialSignatureInput {
