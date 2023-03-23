@@ -13,7 +13,7 @@ import (
 )
 
 // GenerateKeys wraps around ecdsa.CreatePartyTwoShares()
-func GenerateKeys() (fm P2KeyGenFirstMessage, err error) {
+func GenerateKeys() (fm *P2KeyGenFirstMessage, err error) {
 	curve := secp256k1.S256()
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 
@@ -34,7 +34,7 @@ func GenerateKeys() (fm P2KeyGenFirstMessage, err error) {
 		return
 	}
 
-	fm = P2KeyGenFirstMessage{
+	fm = &P2KeyGenFirstMessage{
 		Dlnproof:   proofBytes,
 		Publickey:  kg.PublicShare,
 		Privatekey: secretShare,
@@ -85,7 +85,7 @@ func ComputePubKey(req *PublicKeyRequest) (*PublicKeyResponse, error) {
 	return pk, nil
 }
 
-func CreateEphemeralCommitments() (response P2EphemeralCommitmentsResponse, err error) {
+func CreateEphemeralCommitments() (response *P2EphemeralCommitmentsResponse, err error) {
 	curve := secp256k1.S256()
 	msg, commit, key, err := ecdsa.CreateEphemeralCommitments()
 	if err != nil {
@@ -139,7 +139,7 @@ func CreateEphemeralCommitments() (response P2EphemeralCommitmentsResponse, err 
 		return
 	}
 
-	response = P2EphemeralCommitmentsResponse{
+	response = &P2EphemeralCommitmentsResponse{
 		Keygenmsg:    keygenBytes,
 		Witness:      commitWitnessBytes,
 		Ephemeralkey: ephKeyBytes,
@@ -148,7 +148,7 @@ func CreateEphemeralCommitments() (response P2EphemeralCommitmentsResponse, err 
 	return
 }
 
-func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg P2EphemeralKeyGenSecondMessage, err error) {
+func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg *P2EphemeralKeyGenSecondMessage, err error) {
 	curve := secp256k1.S256()
 	basePoint := cryptoutils.BasePoint(curve)
 	basePoint2 := cryptoutils.BasePoint2(curve)
@@ -202,7 +202,7 @@ func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg
 		return
 	}
 	if ok {
-		ephMsg = P2EphemeralKeyGenSecondMessage{
+		ephMsg = &P2EphemeralKeyGenSecondMessage{
 			Commitwitness: input.GetCommitWitness(),
 		}
 	} else {
