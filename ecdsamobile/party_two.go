@@ -13,7 +13,7 @@ import (
 )
 
 // GenerateKeys wraps around ecdsa.CreatePartyTwoShares()
-func GenerateKeys() (fm *P2KeyGenFirstMessage, err error) {
+func GenerateKeys() (fmBytes []byte, err error) {
 	curve := secp256k1.S256()
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
 
@@ -34,15 +34,30 @@ func GenerateKeys() (fm *P2KeyGenFirstMessage, err error) {
 		return
 	}
 
-	fm = &P2KeyGenFirstMessage{
+	fm := &P2KeyGenFirstMessage{
 		Dlnproof:   proofBytes,
 		Publickey:  kg.PublicShare,
 		Privatekey: secretShare,
 	}
+
+	fmBytes, err = proto.Marshal(fm)
+	if err != nil {
+		return
+	}
 	return
 }
 
-func VerifyCommitmentAndDlogProof(p1FirstMsg *P1KeyGenFirstMessage, p1SecondMsg *P1KeyGenSecondMessage) (err error) {
+func VerifyCommitmentAndDlogProof(p1FirstMsgBytes []byte, p1SecondMsgBytes []byte) (err error) {
+	p1FirstMsg := &P1KeyGenFirstMessage{}
+	if err = proto.Unmarshal(p1FirstMsgBytes, p1FirstMsg); err != nil {
+		return err
+	}
+
+	p1SecondMsg := &P1KeyGenSecondMessage{}
+	if err = proto.Unmarshal(p1SecondMsgBytes, p1SecondMsg); err != nil {
+		return err
+	}
+
 	p1_first_msg := p1FirstMessageFromProto(p1FirstMsg)
 	// proto.Unmarshal()
 	p1_second_msg, err := p1SecondMessageFromProto(p1SecondMsg)
@@ -54,7 +69,13 @@ func VerifyCommitmentAndDlogProof(p1FirstMsg *P1KeyGenFirstMessage, p1SecondMsg 
 	return
 }
 
-func ComputePubKey(req *PublicKeyRequest) (*PublicKeyResponse, error) {
+func ComputePubKey(reqBytes []byte) ([]byte, error) {
+	req := &PublicKeyRequest{}
+
+	if err := proto.Unmarshal(reqBytes, req); err != nil {
+		return nil, err
+	}
+
 	// compute the public key
 	curve := secp256k1.S256()
 	secret := req.GetSecretshare()
@@ -82,10 +103,15 @@ func ComputePubKey(req *PublicKeyRequest) (*PublicKeyResponse, error) {
 		X: x.Bytes(),
 		Y: y.Bytes(),
 	}
-	return pk, nil
+
+	pkBytes, err := proto.Marshal(pk)
+	if err != nil {
+		return nil, err
+	}
+	return pkBytes, nil
 }
 
-func CreateEphemeralCommitments() (response *P2EphemeralCommitmentsResponse, err error) {
+func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 	curve := secp256k1.S256()
 	msg, commit, key, err := ecdsa.CreateEphemeralCommitments()
 	if err != nil {
@@ -139,16 +165,23 @@ func CreateEphemeralCommitments() (response *P2EphemeralCommitmentsResponse, err
 		return
 	}
 
-	response = &P2EphemeralCommitmentsResponse{
+	response := &P2EphemeralCommitmentsResponse{
 		Keygenmsg:    keygenBytes,
 		Witness:      commitWitnessBytes,
 		Ephemeralkey: ephKeyBytes,
 	}
 
+	responseBytes, err = proto.Marshal(response)
+	if err != nil {
+		return
+	}
 	return
 }
 
-func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg *P2EphemeralKeyGenSecondMessage, err error) {
+func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err error) {
+	ephemeralKeyVerificationInput := &EphemeralKeyVerificationInput{}
+	proto.Unmarshal(inputBytes, ephemeralKeyVerificationInput)
+
 	curve := secp256k1.S256()
 	basePoint := cryptoutils.BasePoint(curve)
 	basePoint2 := cryptoutils.BasePoint2(curve)
@@ -158,12 +191,12 @@ func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg
 	var keygenmsg *P1EphemeralKeyGenFirstMessage
 	var witness *EphemeralCommitWitness
 
-	if err = proto.Unmarshal(input.KeyGenMsg, keygenmsg); err != nil {
+	if err = proto.Unmarshal(ephemeralKeyVerificationInput.KeyGenMsg, keygenmsg); err != nil {
 		err = fmt.Errorf("cannot unmarshal keygen message: %w", err)
 		return
 	}
 
-	if err = proto.Unmarshal(input.CommitWitness, witness); err != nil {
+	if err = proto.Unmarshal(ephemeralKeyVerificationInput.CommitWitness, witness); err != nil {
 		err = fmt.Errorf("cannot unmarshal witness: %w", err)
 		return
 	}
@@ -202,9 +235,11 @@ func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg
 		return
 	}
 	if ok {
-		ephMsg = &P2EphemeralKeyGenSecondMessage{
-			Commitwitness: input.GetCommitWitness(),
+		ephMsg := &P2EphemeralKeyGenSecondMessage{
+			Commitwitness: ephemeralKeyVerificationInput.GetCommitWitness(),
 		}
+
+		ephMsgBytes, err = proto.Marshal(ephMsg)
 	} else {
 		err = fmt.Errorf("cannot verify ecddh dlog proof")
 		return
@@ -212,7 +247,13 @@ func VerifyEphemeralKeyAndDecommit(input *EphemeralKeyVerificationInput) (ephMsg
 	return
 }
 
-func PartialSignature(partialSigInput *PartialSignatureInput) (sig *PartialSignatureOutput, err error) {
+func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) {
+	partialSigInput := &PartialSignatureInput{}
+	err = proto.Unmarshal(partialSigInputBytes, partialSigInput)
+
+	if err != nil {
+		return nil, err
+	}
 	// z = hash(msg), e_pk_1 = encrypted share of party 1
 	// Random point R_2 = k_2 * G
 	// common point R = R_1 + k_2 * G
@@ -268,9 +309,11 @@ func PartialSignature(partialSigInput *PartialSignatureInput) (sig *PartialSigna
 	c3 := encryptionKey.Add(c1, c2)
 	// fmt.Println("msg", msg)
 
-	sig = &PartialSignatureOutput{
+	sig := &PartialSignatureOutput{
 		C3: c3.C.Bytes(),
 	}
+
+	sigBytes, err = proto.Marshal(sig)
 	return
 }
 
