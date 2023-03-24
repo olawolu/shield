@@ -1,4 +1,4 @@
-package ecdsamobile
+package pb
 
 import (
 	"math/big"
@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func proofFromProto(protoProof []byte) (p *cryptoutils.DlogProof, err error) {
+func ProofFromProto(protoProof []byte) (p *cryptoutils.DlogProof, err error) {
 	var proof DlogProof
 	var base, randCommit, publicShare *cryptoutils.Point
 
@@ -43,7 +43,7 @@ func proofFromProto(protoProof []byte) (p *cryptoutils.DlogProof, err error) {
 	return
 }
 
-func proofToProto(p *cryptoutils.DlogProof) (protoProof []byte, err error) {
+func ProofToProto(p *cryptoutils.DlogProof) (protoProof []byte, err error) {
 	var proof DlogProof
 	curve := secp256k1.S256()
 
@@ -57,7 +57,7 @@ func proofToProto(p *cryptoutils.DlogProof) (protoProof []byte, err error) {
 	return
 }
 
-func ecddhProofFromProto(protoProof []byte) (p *cryptoutils.ECDDHProof, err error) {
+func EcddhProofFromProto(protoProof []byte) (p *cryptoutils.ECDDHProof, err error) {
 	var proof EcddhProof
 	var a1, a2 *cryptoutils.Point
 
@@ -85,7 +85,7 @@ func ecddhProofFromProto(protoProof []byte) (p *cryptoutils.ECDDHProof, err erro
 	return
 }
 
-func p1FirstMessageFromProto(p1FirstMsg *P1KeyGenFirstMessage) ecdsa.P1KeyGenFirstMsg {
+func P1FirstMessageFromProto(p1FirstMsg *P1KeyGenFirstMessage) ecdsa.P1KeyGenFirstMsg {
 	p1_pk_commitment := p1FirstMsg.Commitment
 	p1_pk_commitment_zkp := p1FirstMsg.GetCommitmentzkp()
 
@@ -95,7 +95,7 @@ func p1FirstMessageFromProto(p1FirstMsg *P1KeyGenFirstMessage) ecdsa.P1KeyGenFir
 	}
 }
 
-func p1SecondMessageFromProto(p1SecondMsg *P1KeyGenSecondMessage) (*ecdsa.P1KeyGenSecondMsg, error) {
+func P1SecondMessageFromProto(p1SecondMsg *P1KeyGenSecondMessage) (*ecdsa.P1KeyGenSecondMsg, error) {
 	witnessBytes := p1SecondMsg.GetWitness()
 	var witness CommitWitness
 	err := proto.Unmarshal(witnessBytes, &witness)
@@ -107,7 +107,7 @@ func p1SecondMessageFromProto(p1SecondMsg *P1KeyGenSecondMessage) (*ecdsa.P1KeyG
 	publicShare := witness.GetPublicshare()
 	dLogProof := witness.GetDlogproof()
 
-	proof, err := proofFromProto(dLogProof)
+	proof, err := ProofFromProto(dLogProof)
 	if err != nil {
 		return nil, err
 	}
@@ -122,4 +122,37 @@ func p1SecondMessageFromProto(p1SecondMsg *P1KeyGenSecondMessage) (*ecdsa.P1KeyG
 	return &ecdsa.P1KeyGenSecondMsg{
 		Witness: ecdsaWitness,
 	}, nil
+}
+
+func ParsePartyOneFirstMessage(msg ecdsa.P1KeyGenFirstMsg) ([]byte, error) {
+	protoMsg := partyOneFirstMessageToProtoMessage(msg)
+	return proto.Marshal(protoMsg)
+}
+
+func partyOneFirstMessageToProtoMessage(msg ecdsa.P1KeyGenFirstMsg) *P1KeyGenFirstMessage {
+	return &P1KeyGenFirstMessage{
+		Commitment:    msg.Commitment.Bytes(),
+		Commitmentzkp: msg.CommitmentZkp.Bytes(),
+	}
+}
+
+func ParsePartyOneSecondMessage(msg ecdsa.P1KeyGenSecondMsg) ([]byte, error) {
+	protoWitness := commitWitnessToProto(msg.Witness)
+	return proto.Marshal(protoWitness)
+}
+
+func commitWitnessToProto(witness ecdsa.CommitWitness) *CommitWitness {
+	protoWitness := &CommitWitness{
+		Pkcommitmentblindfactor: witness.PkCommitmentBlindFactor.Bytes(),
+		Zkblindfactor:           witness.ZkBlindfactor.Bytes(),
+		Publicshare:             witness.PublicShare,
+	}
+
+	protoDlogProof, err := ProofToProto(&witness.DlogProof)
+	if err != nil {
+		panic(err)
+	}
+	protoWitness.Dlogproof = protoDlogProof
+
+	return protoWitness
 }

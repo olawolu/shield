@@ -1,6 +1,7 @@
 package tss_test
 
 import (
+	"crypto/elliptic"
 	"fmt"
 	"math/big"
 	"testing"
@@ -29,7 +30,7 @@ func TestDlogProof(t *testing.T) {
 }
 
 func TestFullKeyGeneration(t *testing.T) {
-	fmt.Println("==========================TestFullKeyGeneration=======================================")
+	// Round 1 
 	p1FirstMsg, witness, p1_secret, err := ecdsa.CreatePartyOneCommitment()
 	assert.NoError(t, err)
 
@@ -39,11 +40,17 @@ func TestFullKeyGeneration(t *testing.T) {
 	p1SecondMessage, err := ecdsa.PartyOneVerifyAndDecommit(p2Firstmessage.DlogProof, witness)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, p1SecondMessage.Witness.PublicShare)
+	elliptic.P256()
 
+	// Round 2 - party 1 sends party 2 its decomitted value
 	err = ecdsa.PartyTwoVerifyCommitmentAndDlogProof(p1FirstMsg, p1SecondMessage)
 	assert.NoError(t, err)
 	assert.NotEqual(t, p2Firstmessage.PublicShare, p1SecondMessage.Witness.PublicShare)
 
+	// Round 3 - party 1 generates a paillier key pair and encrypts its secret share
+	// party 1 sends its encrypted share to party 2 together with the paillier public key
+
+	// Round 4 - both parties compute the public key and party 2 stores party 1's paillier public key and encrypted share 
 	p2_public_share, err := secp256k1.ParsePubKey(p2Firstmessage.PublicShare)
 	assert.NoError(t, err)
 	pk1, err := ecdsa.ComputePubKey(p2_public_share, p1_secret)

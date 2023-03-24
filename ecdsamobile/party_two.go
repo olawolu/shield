@@ -9,6 +9,7 @@ import (
 	"github.com/didiercrunch/paillier"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 	"github.com/helicarrierstudio/tss-lib/ecdsa"
+	"github.com/helicarrierstudio/tss-lib/pb"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -22,7 +23,7 @@ func GenerateKeys() (fmBytes []byte, err error) {
 		return
 	}
 
-	proof := &DlogProof{
+	proof := &pb.DlogProof{
 		Base:        basePoint.Marshal(curve),
 		Randcommit:  kg.DlogProof.RandCommit.Marshal(curve),
 		Publicshare: kg.DlogProof.PublicShare.Marshal(curve),
@@ -34,10 +35,10 @@ func GenerateKeys() (fmBytes []byte, err error) {
 		return
 	}
 
-	fm := &P2KeyGenFirstMessage{
+	fm := &pb.P2KeyGenFirstMessage{
 		Dlnproof:   proofBytes,
 		Publickey:  kg.PublicShare,
-		Privatekey: secretShare,
+		Privatekey: secretShare, // figure out a way to hide this from the other party
 	}
 
 	fmBytes, err = proto.Marshal(fm)
@@ -48,19 +49,19 @@ func GenerateKeys() (fmBytes []byte, err error) {
 }
 
 func VerifyCommitmentAndDlogProof(p1FirstMsgBytes []byte, p1SecondMsgBytes []byte) (err error) {
-	p1FirstMsg := &P1KeyGenFirstMessage{}
+	p1FirstMsg := &pb.P1KeyGenFirstMessage{}
 	if err = proto.Unmarshal(p1FirstMsgBytes, p1FirstMsg); err != nil {
 		return err
 	}
 
-	p1SecondMsg := &P1KeyGenSecondMessage{}
+	p1SecondMsg := &pb.P1KeyGenSecondMessage{}
 	if err = proto.Unmarshal(p1SecondMsgBytes, p1SecondMsg); err != nil {
 		return err
 	}
 
-	p1_first_msg := p1FirstMessageFromProto(p1FirstMsg)
+	p1_first_msg := pb.P1FirstMessageFromProto(p1FirstMsg)
 	// proto.Unmarshal()
-	p1_second_msg, err := p1SecondMessageFromProto(p1SecondMsg)
+	p1_second_msg, err := pb.P1SecondMessageFromProto(p1SecondMsg)
 	if err != nil {
 		return err
 	}
@@ -70,7 +71,7 @@ func VerifyCommitmentAndDlogProof(p1FirstMsgBytes []byte, p1SecondMsgBytes []byt
 }
 
 func ComputePubKey(reqBytes []byte) ([]byte, error) {
-	req := &PublicKeyRequest{}
+	req := &pb.PublicKeyRequest{}
 
 	if err := proto.Unmarshal(reqBytes, req); err != nil {
 		return nil, err
@@ -99,7 +100,7 @@ func ComputePubKey(reqBytes []byte) ([]byte, error) {
 	u, v := pubKey.X(), pubKey.Y()
 
 	x, y := curve.ScalarMult(u, v, secret)
-	pk := &PublicKeyResponse{
+	pk := &pb.PublicKeyResponse{
 		X: x.Bytes(),
 		Y: y.Bytes(),
 	}
@@ -119,7 +120,7 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 		return
 	}
 
-	keygen := &P2EphemeralKeyGenFirstMessage{
+	keygen := &pb.P2EphemeralKeyGenFirstMessage{
 		Commitment:    msg.PkCommitment.Bytes(),
 		Commitmentzkp: msg.ZkPokCommitment.Bytes(),
 	}
@@ -130,7 +131,7 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 	}
 
 	p := commit.DlogProof
-	proof := &EcddhProof{
+	proof := &pb.EcddhProof{
 		A1:        p.A1.Marshal(curve),
 		A2:        p.A2.Marshal(curve),
 		Z:         p.Z,
@@ -142,7 +143,7 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 		return
 	}
 
-	commitWitness := &EphemeralCommitWitness{
+	commitWitness := &pb.EphemeralCommitWitness{
 		Pkcommitmentblindfactor: commit.PkCommitmentBlindFactor.Bytes(),
 		Zkproofblindfactor:      commit.ZkPokBlindfactor.Bytes(),
 		Publicshare:             commit.PublicShare,
@@ -155,7 +156,7 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 		return
 	}
 
-	ephKey := &EphemeralEcKeyPair{
+	ephKey := &pb.EphemeralEcKeyPair{
 		Publickey:  key.PublicShare,
 		Privatekey: key.SecretShare,
 	}
@@ -165,7 +166,7 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 		return
 	}
 
-	response := &P2EphemeralCommitmentsResponse{
+	response := &pb.P2EphemeralCommitmentsResponse{
 		Keygenmsg:    keygenBytes,
 		Witness:      commitWitnessBytes,
 		Ephemeralkey: ephKeyBytes,
@@ -179,7 +180,7 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 }
 
 func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err error) {
-	ephemeralKeyVerificationInput := &EphemeralKeyVerificationInput{}
+	ephemeralKeyVerificationInput := &pb.EphemeralKeyVerificationInput{}
 	proto.Unmarshal(inputBytes, ephemeralKeyVerificationInput)
 
 	curve := secp256k1.S256()
@@ -188,8 +189,8 @@ func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err e
 
 	var pubKeyPoint, cPoint *cryptoutils.Point
 
-	var keygenmsg *P1EphemeralKeyGenFirstMessage
-	var witness *EphemeralCommitWitness
+	var keygenmsg *pb.P1EphemeralKeyGenFirstMessage
+	var witness *pb.EphemeralCommitWitness
 
 	if err = proto.Unmarshal(ephemeralKeyVerificationInput.KeyGenMsg, keygenmsg); err != nil {
 		err = fmt.Errorf("cannot unmarshal keygen message: %w", err)
@@ -216,7 +217,7 @@ func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err e
 
 	proofBytes := keygenmsg.GetEcddhProof()
 
-	proof, err := ecddhProofFromProto(proofBytes)
+	proof, err := pb.EcddhProofFromProto(proofBytes)
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal ecddh proof: %w", err)
 		return
@@ -235,7 +236,7 @@ func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err e
 		return
 	}
 	if ok {
-		ephMsg := &P2EphemeralKeyGenSecondMessage{
+		ephMsg := &pb.P2EphemeralKeyGenSecondMessage{
 			Commitwitness: ephemeralKeyVerificationInput.GetCommitWitness(),
 		}
 
@@ -248,7 +249,7 @@ func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err e
 }
 
 func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) {
-	partialSigInput := &PartialSignatureInput{}
+	partialSigInput := &pb.PartialSignatureInput{}
 	err = proto.Unmarshal(partialSigInputBytes, partialSigInput)
 
 	if err != nil {
@@ -309,7 +310,7 @@ func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) 
 	c3 := encryptionKey.Add(c1, c2)
 	// fmt.Println("msg", msg)
 
-	sig := &PartialSignatureOutput{
+	sig := &pb.PartialSignatureOutput{
 		C3: c3.C.Bytes(),
 	}
 
@@ -326,7 +327,7 @@ type parsedSigInput struct {
 	ephemeralSecret []byte
 }
 
-func parseSignatureInput(input *PartialSignatureInput) (*parsedSigInput, error) {
+func parseSignatureInput(input *pb.PartialSignatureInput) (*parsedSigInput, error) {
 	p1_pk, err := secp256k1.ParsePubKey(input.GetEphemeralRemoteKey())
 	if err != nil {
 		err = fmt.Errorf("cannot parse public key: %w", err)
