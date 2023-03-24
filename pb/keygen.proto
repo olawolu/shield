@@ -1,6 +1,6 @@
 syntax = "proto3";
 package tsslib;
-option go_package = "/ecdsamobile";
+option go_package = "./pb";
 
 message DlogProof {
     bytes base = 1;
