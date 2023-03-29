@@ -99,6 +99,11 @@ message EphemeralKeyVerificationInput {
     bytes commitWitness = 2;
 }
 
+message PaillierKeys {
+    bytes encryptionKey = 1;
+    bytes encryptedSecret = 2;
+}
+
 message PartialSignatureInput {
     bytes encryptionKey = 1;
     bytes encryptedShare = 2;

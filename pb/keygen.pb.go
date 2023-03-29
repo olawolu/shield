@@ -1051,6 +1051,61 @@ func (x *EphemeralKeyVerificationInput) GetCommitWitness() []byte {
 	return nil
 }
 
+type PaillierKeys struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	EncryptionKey   []byte `protobuf:"bytes,1,opt,name=encryptionKey,proto3" json:"encryptionKey,omitempty"`
+	EncryptedSecret []byte `protobuf:"bytes,2,opt,name=encryptedSecret,proto3" json:"encryptedSecret,omitempty"`
+}
+
+func (x *PaillierKeys) Reset() {
+	*x = PaillierKeys{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_keygen_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PaillierKeys) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaillierKeys) ProtoMessage() {}
+
+func (x *PaillierKeys) ProtoReflect() protoreflect.Message {
+	mi := &file_keygen_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaillierKeys.ProtoReflect.Descriptor instead.
+func (*PaillierKeys) Descriptor() ([]byte, []int) {
+	return file_keygen_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *PaillierKeys) GetEncryptionKey() []byte {
+	if x != nil {
+		return x.EncryptionKey
+	}
+	return nil
+}
+
+func (x *PaillierKeys) GetEncryptedSecret() []byte {
+	if x != nil {
+		return x.EncryptedSecret
+	}
+	return nil
+}
+
 type PartialSignatureInput struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1067,7 +1122,7 @@ type PartialSignatureInput struct {
 func (x *PartialSignatureInput) Reset() {
 	*x = PartialSignatureInput{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_keygen_proto_msgTypes[17]
+		mi := &file_keygen_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1080,7 +1135,7 @@ func (x *PartialSignatureInput) String() string {
 func (*PartialSignatureInput) ProtoMessage() {}
 
 func (x *PartialSignatureInput) ProtoReflect() protoreflect.Message {
-	mi := &file_keygen_proto_msgTypes[17]
+	mi := &file_keygen_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1093,7 +1148,7 @@ func (x *PartialSignatureInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartialSignatureInput.ProtoReflect.Descriptor instead.
 func (*PartialSignatureInput) Descriptor() ([]byte, []int) {
-	return file_keygen_proto_rawDescGZIP(), []int{17}
+	return file_keygen_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *PartialSignatureInput) GetEncryptionKey() []byte {
@@ -1149,7 +1204,7 @@ type PartialSignatureOutput struct {
 func (x *PartialSignatureOutput) Reset() {
 	*x = PartialSignatureOutput{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_keygen_proto_msgTypes[18]
+		mi := &file_keygen_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1162,7 +1217,7 @@ func (x *PartialSignatureOutput) String() string {
 func (*PartialSignatureOutput) ProtoMessage() {}
 
 func (x *PartialSignatureOutput) ProtoReflect() protoreflect.Message {
-	mi := &file_keygen_proto_msgTypes[18]
+	mi := &file_keygen_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1175,7 +1230,7 @@ func (x *PartialSignatureOutput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartialSignatureOutput.ProtoReflect.Descriptor instead.
 func (*PartialSignatureOutput) Descriptor() ([]byte, []int) {
-	return file_keygen_proto_rawDescGZIP(), []int{18}
+	return file_keygen_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *PartialSignatureOutput) GetC3() []byte {
@@ -1300,6 +1355,12 @@ var file_keygen_proto_rawDesc = []byte{
 	0x09, 0x6b, 0x65, 0x79, 0x47, 0x65, 0x6e, 0x4d, 0x73, 0x67, 0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6f,
 	0x6d, 0x6d, 0x69, 0x74, 0x57, 0x69, 0x74, 0x6e, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
 	0x0c, 0x52, 0x0d, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x57, 0x69, 0x74, 0x6e, 0x65, 0x73, 0x73,
+	0x22, 0x5e, 0x0a, 0x0c, 0x50, 0x61, 0x69, 0x6c, 0x6c, 0x69, 0x65, 0x72, 0x4b, 0x65, 0x79, 0x73,
+	0x12, 0x24, 0x0a, 0x0d, 0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x4b, 0x65,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0d, 0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x4b, 0x65, 0x79, 0x12, 0x28, 0x0a, 0x0f, 0x65, 0x6e, 0x63, 0x72, 0x79, 0x70,
+	0x74, 0x65, 0x64, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x0f, 0x65, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x65, 0x64, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74,
 	0x22, 0xf1, 0x01, 0x0a, 0x15, 0x50, 0x61, 0x72, 0x74, 0x69, 0x61, 0x6c, 0x53, 0x69, 0x67, 0x6e,
 	0x61, 0x74, 0x75, 0x72, 0x65, 0x49, 0x6e, 0x70, 0x75, 0x74, 0x12, 0x24, 0x0a, 0x0d, 0x65, 0x6e,
 	0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x4b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
@@ -1333,7 +1394,7 @@ func file_keygen_proto_rawDescGZIP() []byte {
 	return file_keygen_proto_rawDescData
 }
 
-var file_keygen_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_keygen_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_keygen_proto_goTypes = []interface{}{
 	(*DlogProof)(nil),                      // 0: tsslib.DlogProof
 	(*EcddhProof)(nil),                     // 1: tsslib.EcddhProof
@@ -1352,8 +1413,9 @@ var file_keygen_proto_goTypes = []interface{}{
 	(*EphemeralEcKeyPair)(nil),             // 14: tsslib.EphemeralEcKeyPair
 	(*P2EphemeralCommitmentsResponse)(nil), // 15: tsslib.P2EphemeralCommitmentsResponse
 	(*EphemeralKeyVerificationInput)(nil),  // 16: tsslib.EphemeralKeyVerificationInput
-	(*PartialSignatureInput)(nil),          // 17: tsslib.PartialSignatureInput
-	(*PartialSignatureOutput)(nil),         // 18: tsslib.PartialSignatureOutput
+	(*PaillierKeys)(nil),                   // 17: tsslib.PaillierKeys
+	(*PartialSignatureInput)(nil),          // 18: tsslib.PartialSignatureInput
+	(*PartialSignatureOutput)(nil),         // 19: tsslib.PartialSignatureOutput
 }
 var file_keygen_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -1574,7 +1636,7 @@ func file_keygen_proto_init() {
 			}
 		}
 		file_keygen_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartialSignatureInput); i {
+			switch v := v.(*PaillierKeys); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1586,6 +1648,18 @@ func file_keygen_proto_init() {
 			}
 		}
 		file_keygen_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PartialSignatureInput); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_keygen_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PartialSignatureOutput); i {
 			case 0:
 				return &v.state
@@ -1604,7 +1678,7 @@ func file_keygen_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_keygen_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
