@@ -25,6 +25,7 @@ func GenerateKeys() (fmBytes []byte, err error) {
 
 	proof := &pb.DlogProof{
 		Base:        basePoint.Marshal(curve),
+		Challenge:   kg.DlogProof.Challenge.Bytes(),
 		Randcommit:  kg.DlogProof.RandCommit.Marshal(curve),
 		Publicshare: kg.DlogProof.PublicShare.Marshal(curve),
 		Hiddenvalue: kg.DlogProof.HiddenValue.Bytes(),
@@ -78,7 +79,7 @@ func ComputePubKey(reqBytes []byte) ([]byte, error) {
 	}
 
 	// compute the public key
-	curve := secp256k1.S256()
+	// curve := secp256k1.S256()
 	secret := req.GetSecretshare()
 	otherPartyPublicShare := req.GetOtherpartypublicshare()
 
@@ -92,24 +93,7 @@ func ComputePubKey(reqBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	pubKey, err := secp256k1.ParsePubKey(key_bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	u, v := pubKey.X(), pubKey.Y()
-
-	x, y := curve.ScalarMult(u, v, secret)
-	pk := &pb.PublicKeyResponse{
-		X: x.Bytes(),
-		Y: y.Bytes(),
-	}
-
-	pkBytes, err := proto.Marshal(pk)
-	if err != nil {
-		return nil, err
-	}
-	return pkBytes, nil
+	return key_bytes, nil
 }
 
 func CreateEphemeralCommitments() (responseBytes []byte, err error) {
