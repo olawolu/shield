@@ -30,7 +30,7 @@ func TestDlogProof(t *testing.T) {
 }
 
 func TestFullKeyGeneration(t *testing.T) {
-	// Round 1 
+	// Round 1
 	p1FirstMsg, witness, p1_secret, err := ecdsa.CreatePartyOneCommitment()
 	assert.NoError(t, err)
 
@@ -50,7 +50,7 @@ func TestFullKeyGeneration(t *testing.T) {
 	// Round 3 - party 1 generates a paillier key pair and encrypts its secret share
 	// party 1 sends its encrypted share to party 2 together with the paillier public key
 
-	// Round 4 - both parties compute the public key and party 2 stores party 1's paillier public key and encrypted share 
+	// Round 4 - both parties compute the public key and party 2 stores party 1's paillier public key and encrypted share
 	p2_public_share, err := secp256k1.ParsePubKey(p2Firstmessage.PublicShare)
 	assert.NoError(t, err)
 	pk1, err := ecdsa.ComputePubKey(p2_public_share, p1_secret)
