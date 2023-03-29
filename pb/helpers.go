@@ -9,38 +9,43 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func ProofFromProto(protoProof []byte) (p *cryptoutils.DlogProof, err error) {
+func ProofFromProto(protoProof []byte) (cryptoutils.DlogProof, error) {
 	var proof DlogProof
-	var base, randCommit, publicShare *cryptoutils.Point
+	var dlogProof cryptoutils.DlogProof
+	// var base, randCommit, publicShare *cryptoutils.Point
+
+	base := new(cryptoutils.Point)
+	randCommit := new(cryptoutils.Point)
+	publicShare := new(cryptoutils.Point)
 
 	curve := secp256k1.S256()
 
-	err = proto.Unmarshal(protoProof, &proof)
+	err := proto.Unmarshal(protoProof, &proof)
 	if err != nil {
-		return
+		return dlogProof, err
 	}
 
 	err = base.Unmarshal(curve, proof.Base)
 	if err != nil {
-		return
+		return dlogProof, err
 	}
 
 	err = randCommit.Unmarshal(curve, proof.Randcommit)
 	if err != nil {
-		return
+		return dlogProof, err
 	}
 
 	err = publicShare.Unmarshal(curve, proof.Publicshare)
 	if err != nil {
-		return
+		return dlogProof, err
 	}
 
-	p.Base = *base
-	p.Challenge = new(big.Int).SetBytes(proof.Challenge)
-	p.HiddenValue = new(big.Int).SetBytes(proof.Hiddenvalue)
-	p.RandCommit = *randCommit
-	p.PublicShare = *publicShare
-	return
+	dlogProof.Base = *base
+	dlogProof.Challenge = new(big.Int).SetBytes(proof.Challenge)
+	dlogProof.HiddenValue = new(big.Int).SetBytes(proof.Hiddenvalue)
+	dlogProof.RandCommit = *randCommit
+	dlogProof.PublicShare = *publicShare
+	return dlogProof, nil
 }
 
 func ProofToProto(p *cryptoutils.DlogProof) (protoProof []byte, err error) {
@@ -116,7 +121,7 @@ func P1SecondMessageFromProto(p1SecondMsg *P1KeyGenSecondMessage) (*ecdsa.P1KeyG
 		PkCommitmentBlindFactor: new(big.Int).SetBytes(blindFactor),
 		ZkBlindfactor:           new(big.Int).SetBytes(zkBlindFactor),
 		PublicShare:             publicShare,
-		DlogProof:               *proof,
+		DlogProof:               proof,
 	}
 
 	return &ecdsa.P1KeyGenSecondMsg{
@@ -137,7 +142,11 @@ func partyOneFirstMessageToProtoMessage(msg ecdsa.P1KeyGenFirstMsg) *P1KeyGenFir
 }
 
 func ParsePartyOneSecondMessage(msg ecdsa.P1KeyGenSecondMsg) ([]byte, error) {
-	protoWitness := commitWitnessToProto(msg.Witness)
+	// protoWitness := commitWitnessToProto(msg.Witness)
+	protoWitness, err := partyOneSecondMessageToProtoMessage(msg)
+	if err != nil {
+		return nil, err
+	}
 	return proto.Marshal(protoWitness)
 }
 
@@ -155,4 +164,15 @@ func commitWitnessToProto(witness ecdsa.CommitWitness) *CommitWitness {
 	protoWitness.Dlogproof = protoDlogProof
 
 	return protoWitness
+}
+
+func partyOneSecondMessageToProtoMessage(msg ecdsa.P1KeyGenSecondMsg) (*P1KeyGenSecondMessage, error) {
+	protoWitness := commitWitnessToProto(msg.Witness)
+	protoWitnessBytes, err := proto.Marshal(protoWitness)
+	if err != nil {
+		return nil, err
+	}
+	return &P1KeyGenSecondMessage{
+		Witness: protoWitnessBytes,
+	}, nil
 }
