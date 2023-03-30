@@ -237,7 +237,7 @@ func VerifyEphemeralCommitmentAndProof(ephMsg1 P2EphemeralKeyGenFirstMsg, ephMsg
 	return
 }
 
-func ComputeSignature(partialSig PartialSignature, localShare EphEcKeyPair, remoteShare []byte, decryptionKey *paillier.PrivateKey, msg *big.Int) (sig []byte, err error) {
+func ComputeSignature(partialSig PartialSignature, localShare EphEcKeyPair, remoteShare []byte, decryptionKey *paillier.PrivateKey) (sig []byte, err error) {
 	q := curve.Params().N
 	k1 := new(big.Int).SetBytes(localShare.SecretShare)
 

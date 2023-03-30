@@ -12,7 +12,6 @@ import (
 )
 
 func TestDlogProof(t *testing.T) {
-	fmt.Println("==========================TestDlogProof=======================================")
 	p1FirstMsg, witness, secret, err := ecdsa.CreatePartyOneCommitment()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, p1FirstMsg)
@@ -68,7 +67,6 @@ func TestFullKeyGeneration(t *testing.T) {
 }
 
 func TestTwoPartySign(t *testing.T) {
-	fmt.Println("==========================TestTwoPartySign=======================================")
 	_, witness, p1_secret, err := ecdsa.CreatePartyOneCommitment()
 	assert.NoError(t, err)
 
@@ -121,7 +119,7 @@ func TestTwoPartySign(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, partial_sig)
 
-	signature, err := ecdsa.ComputeSignature(partial_sig, eph_ec_key_pair_p1, eph_p2_secondMsg.CommitWitness.PublicShare, paillier_key_pair.DecryptionKey, message)
+	signature, err := ecdsa.ComputeSignature(partial_sig, eph_ec_key_pair_p1, eph_p2_secondMsg.CommitWitness.PublicShare, paillier_key_pair.DecryptionKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, signature)
 
