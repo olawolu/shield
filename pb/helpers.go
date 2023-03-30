@@ -142,7 +142,6 @@ func partyOneFirstMessageToProtoMessage(msg ecdsa.P1KeyGenFirstMsg) *P1KeyGenFir
 }
 
 func ParsePartyOneSecondMessage(msg ecdsa.P1KeyGenSecondMsg) ([]byte, error) {
-	// protoWitness := commitWitnessToProto(msg.Witness)
 	protoWitness, err := partyOneSecondMessageToProtoMessage(msg)
 	if err != nil {
 		return nil, err
@@ -175,4 +174,47 @@ func partyOneSecondMessageToProtoMessage(msg ecdsa.P1KeyGenSecondMsg) (*P1KeyGen
 	return &P1KeyGenSecondMessage{
 		Witness: protoWitnessBytes,
 	}, nil
+}
+
+func PartyTwoEphemeralFirstMessageFromProto(p2EphemeralFirstMsg *P2EphemeralKeyGenFirstMessage) ecdsa.P2EphemeralKeyGenFirstMsg {
+	return ecdsa.P2EphemeralKeyGenFirstMsg{
+		PkCommitment:    new(big.Int).SetBytes(p2EphemeralFirstMsg.Commitment),
+		ZkPokCommitment: new(big.Int).SetBytes(p2EphemeralFirstMsg.Commitmentzkp),
+	}
+}
+
+func PartyTwoEphemeralSecondMessageFromProto(p2EphemeralSecondMsg *P2EphemeralKeyGenSecondMessage) (ecdsa.P2EphemeralKeyGenSecondMsg, error) {
+	msg := ecdsa.P2EphemeralKeyGenSecondMsg{}
+
+	witnessBytes := p2EphemeralSecondMsg.GetCommitwitness()
+	var witness EphemeralCommitWitness
+	err := proto.Unmarshal(witnessBytes, &witness)
+	if err != nil {
+		return msg, err
+	}
+	blindFactor := witness.GetPkcommitmentblindfactor()
+	zkBlindFactor := witness.GetZkproofblindfactor()
+	publicShare := witness.GetPublicshare()
+	dLogProof := witness.GetDlogproof()
+	proof, err := EcddhProofFromProto(dLogProof)
+	if err != nil {
+		return msg, err
+	}
+
+	c := witness.GetC()
+	point := &cryptoutils.Point{}
+	err = point.Unmarshal(secp256k1.S256(), c)
+	if err != nil {
+		return msg, err
+	}
+
+	ecdsaWitness := ecdsa.EphemeralCommitWitness{
+		PkCommitmentBlindFactor: new(big.Int).SetBytes(blindFactor),
+		ZkPokBlindfactor:        new(big.Int).SetBytes(zkBlindFactor),
+		PublicShare:             publicShare,
+		DlogProof:               *proof,
+		C:                       *point,
+	}
+	msg.CommitWitness = ecdsaWitness
+	return msg, nil
 }
