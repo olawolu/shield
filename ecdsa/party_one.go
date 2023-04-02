@@ -3,13 +3,13 @@ package ecdsa
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 	"golang.org/x/crypto/cryptobyte"
 	"golang.org/x/crypto/cryptobyte/asn1"
@@ -286,7 +286,7 @@ func VerifySignature(signature, publicKey, message []byte) bool {
 		fmt.Println("invalid key err: ", err)
 		return false
 	}
-	z := sha256.Sum256(message)
+	z := crypto.Keccak256(message)
 	return ecdsa.VerifyASN1(key.ToECDSA(), z[:], signature[:])
 
 }

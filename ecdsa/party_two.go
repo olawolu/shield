@@ -2,13 +2,13 @@ package ecdsa
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 )
 
@@ -191,7 +191,7 @@ func ComputePartialSignature(paillierKey *PaillierKeyPair, encryptionKey *pailli
 	r := new(big.Int).Mod(r_x, q)
 
 	// z = hash(msg)
-	z := sha256.Sum256(msg.Bytes())
+	z := crypto.Keccak256(msg.Bytes())
 	z_int := new(big.Int).SetBytes(z[:])
 
 	// compute k2^-1 * z
