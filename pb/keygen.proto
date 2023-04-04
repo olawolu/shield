@@ -77,6 +77,7 @@ message P1EphemeralKeyGenFirstMessage {
 message P2EphemeralKeyGenFirstMessage {
     bytes commitment = 1;
     bytes commitmentzkp = 2;
+    bytes publicShare = 3;
 }
 
 message P2EphemeralKeyGenSecondMessage {
