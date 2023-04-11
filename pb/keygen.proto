@@ -119,5 +119,5 @@ message PartialSignatureOutput {
 
 message WalletAddress {
     bytes publicKey = 1;
-    bytes address = 2;
+    string address = 2;
 }

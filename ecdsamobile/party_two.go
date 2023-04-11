@@ -98,17 +98,16 @@ func ComputePubKey(reqBytes []byte) ([]byte, error) {
 	}
 	addr := crypto.PubkeyToAddress(*secp256key.ToECDSA())
 	address := crypto.CreateAddress(addr, 0)
-	address.Bytes()
-
+	
 	wallet := pb.WalletAddress{}
-	wallet.Address = address.Bytes()
+	wallet.Address = address.Hex()
 	wallet.PublicKey = key_bytes
 
 	walletBytes, err := proto.Marshal(&wallet)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return walletBytes, nil
 }
 
