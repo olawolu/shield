@@ -116,3 +116,8 @@ message PartialSignatureInput {
 message PartialSignatureOutput {
     bytes C3 = 1;
 }
+
+message WalletAddress {
+    bytes publicKey = 1;
+    bytes address = 2;
+}

@@ -115,7 +115,7 @@ func TestTwoPartySign(t *testing.T) {
 	message := big.NewInt(1234567890)
 
 	// fmt.Println("key", paillier_key_pair.EncryptionKey)
-	partial_sig, err := ecdsa.ComputePartialSignature(paillier_key_pair, paillier_key_pair.EncryptionKey, paillier_key_pair.EncryptedShare, eph_ec_key_pair_p2, eph_p1_first_msg.PublicShare, message, p2_secret)
+	partial_sig, err := ecdsa.ComputePartialSignature(paillier_key_pair, paillier_key_pair.EncryptionKey, paillier_key_pair.EncryptedShare, eph_ec_key_pair_p2, eph_p1_first_msg.PublicShare, message.Bytes(), p2_secret)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, partial_sig)
 

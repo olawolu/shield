@@ -181,7 +181,7 @@ func VerifyEphemeralKeyAndDecommit(msg P1EphemeralKeyGenFirstMsg, ephCommit Ephe
 	return
 }
 
-func ComputePartialSignature(paillierKey *PaillierKeyPair, encryptionKey *paillier.PublicKey, encryptedShare *paillier.Cypher, ephLocal EphEcKeyPair, ephExt secp256k1.PublicKey, msg *big.Int, secretShare []byte) (sig PartialSignature, err error) {
+func ComputePartialSignature(paillierKey *PaillierKeyPair, encryptionKey *paillier.PublicKey, encryptedShare *paillier.Cypher, ephLocal EphEcKeyPair, ephExt secp256k1.PublicKey, msg []byte, secretShare []byte) (sig PartialSignature, err error) {
 	// z = hash(msg), e_pk_1 = encrypted share of party 1
 	// Random point R_2 = k_2 * G
 	// common point R = R_1 + k_2 * G
@@ -193,7 +193,7 @@ func ComputePartialSignature(paillierKey *PaillierKeyPair, encryptionKey *pailli
 	r := new(big.Int).Mod(r_x, q)
 
 	// z = hash(msg)
-	z := crypto.Keccak256(msg.Bytes())
+	z := crypto.Keccak256(msg)
 	z_int := new(big.Int).SetBytes(z[:])
 
 	// compute k2^-1 * z

@@ -7,6 +7,7 @@ import (
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 	"github.com/helicarrierstudio/tss-lib/ecdsa"
 	"github.com/helicarrierstudio/tss-lib/pb"
@@ -95,8 +96,20 @@ func ComputePubKey(reqBytes []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	addr := crypto.PubkeyToAddress(*secp256key.ToECDSA())
+	address := crypto.CreateAddress(addr, 0)
+	address.Bytes()
 
-	return key_bytes, nil
+	wallet := pb.WalletAddress{}
+	wallet.Address = address.Bytes()
+	wallet.PublicKey = key_bytes
+
+	walletBytes, err := proto.Marshal(&wallet)
+	if err != nil {
+		return nil, err
+	}
+	
+	return walletBytes, nil
 }
 
 func CreateEphemeralCommitments() (responseBytes []byte, err error) {
