@@ -32,10 +32,10 @@ func TestEcddhProof(t *testing.T) {
 		X: x.Bytes(),
 	}
 
-	proof, err := cryptoutils.NewEcddhProof(curve, &witness, &delta)
+	proof, err := cryptoutils.NewEcddhProof(curve, witness, delta)
 	assert.Nil(t, err)
 
-	ok, err := proof.Verify(curve, &delta)
+	ok, err := cryptoutils.Verify(curve, *proof, delta)
 	assert.Nil(t, err)
 	assert.True(t, ok)
 }
@@ -70,10 +70,10 @@ func TestWrongEcddhProof(t *testing.T) {
 		X: x.Bytes(),
 	}
 
-	proof, err := cryptoutils.NewEcddhProof(curve, &witness, &delta)
+	proof, err := cryptoutils.NewEcddhProof(curve, witness, delta)
 	assert.Nil(t, err)
 
-	ok, err := proof.Verify(curve, &delta)
+	ok, err := cryptoutils.Verify(curve, *proof, delta)
 	assert.NotNil(t, err)
 	assert.False(t, ok)
 }

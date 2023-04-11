@@ -3,7 +3,6 @@ package pb
 import (
 	"math/big"
 
-	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 	"github.com/helicarrierstudio/tss-lib/ecdsa"
 	"google.golang.org/protobuf/proto"
@@ -12,80 +11,54 @@ import (
 func ProofFromProto(protoProof []byte) (cryptoutils.DlogProof, error) {
 	var proof DlogProof
 	var dlogProof cryptoutils.DlogProof
-	// var base, randCommit, publicShare *cryptoutils.Point
-
-	base := new(cryptoutils.Point)
-	randCommit := new(cryptoutils.Point)
-	publicShare := new(cryptoutils.Point)
-
-	curve := secp256k1.S256()
-
 	err := proto.Unmarshal(protoProof, &proof)
 	if err != nil {
 		return dlogProof, err
 	}
 
-	err = base.Unmarshal(curve, proof.Base)
-	if err != nil {
-		return dlogProof, err
-	}
+	base := cryptoutils.Unmarshal(proof.Base)
 
-	err = randCommit.Unmarshal(curve, proof.Randcommit)
-	if err != nil {
-		return dlogProof, err
-	}
-
-	err = publicShare.Unmarshal(curve, proof.Publicshare)
-	if err != nil {
-		return dlogProof, err
-	}
-
-	dlogProof.Base = *base
+	randCommit := cryptoutils.Unmarshal(proof.Randcommit)
+	publicShare := cryptoutils.Unmarshal(proof.Publicshare)
+	dlogProof.Base = base
 	dlogProof.Challenge = new(big.Int).SetBytes(proof.Challenge)
 	dlogProof.HiddenValue = new(big.Int).SetBytes(proof.Hiddenvalue)
-	dlogProof.RandCommit = *randCommit
-	dlogProof.PublicShare = *publicShare
+	dlogProof.RandCommit = randCommit
+	dlogProof.PublicShare = publicShare
 	return dlogProof, nil
 }
 
 func ProofToProto(p *cryptoutils.DlogProof) (protoProof []byte, err error) {
 	var proof DlogProof
-	curve := secp256k1.S256()
+	base := cryptoutils.Marshal(p.Base)
+	randCommit := cryptoutils.Marshal(p.RandCommit)
+	publicShare := cryptoutils.Marshal(p.PublicShare)
 
-	proof.Base = p.Base.Marshal(curve)
+	proof.Base = base
 	proof.Challenge = p.Challenge.Bytes()
 	proof.Hiddenvalue = p.HiddenValue.Bytes()
-	proof.Randcommit = p.RandCommit.Marshal(curve)
-	proof.Publicshare = p.PublicShare.Marshal(curve)
+	proof.Randcommit = randCommit
+	proof.Publicshare = publicShare
 
 	protoProof, err = proto.Marshal(&proof)
 	return
 }
 
 func EcddhProofFromProto(protoProof []byte) (p *cryptoutils.ECDDHProof, err error) {
-	var proof EcddhProof
-	var a1, a2 *cryptoutils.Point
-
-	curve := secp256k1.S256()
-
-	err = proto.Unmarshal(protoProof, &proof)
+	proof := &EcddhProof{}
+	err = proto.Unmarshal(protoProof, proof)
 	if err != nil {
 		return
 	}
 
-	err = a1.Unmarshal(curve, proof.A1)
-	if err != nil {
-		return
-	}
+	a1 := cryptoutils.Unmarshal(proof.A1)
+	a2 := cryptoutils.Unmarshal(proof.A2)
 
-	err = a2.Unmarshal(curve, proof.A2)
-	if err != nil {
-		return
+	p = &cryptoutils.ECDDHProof{
+		A1: a1,
+		A2: a2,
+		Z:  proof.Z,
 	}
-
-	p.A1 = *a1
-	p.A2 = *a2
-	p.Z = proof.GetZ()
 	p.HashChoice = proof.GetHashcoice()
 	return
 }
@@ -202,18 +175,13 @@ func PartyTwoEphemeralSecondMessageFromProto(p2EphemeralSecondMsg *P2EphemeralKe
 	}
 
 	c := witness.GetC()
-	point := &cryptoutils.Point{}
-	err = point.Unmarshal(secp256k1.S256(), c)
-	if err != nil {
-		return msg, err
-	}
-
+	cPoint := cryptoutils.Unmarshal(c)
 	ecdsaWitness := ecdsa.EphemeralCommitWitness{
 		PkCommitmentBlindFactor: new(big.Int).SetBytes(blindFactor),
 		ZkPokBlindfactor:        new(big.Int).SetBytes(zkBlindFactor),
 		PublicShare:             publicShare,
 		DlogProof:               *proof,
-		C:                       *point,
+		C:                       cPoint,
 	}
 	msg.CommitWitness = ecdsaWitness
 	return msg, nil

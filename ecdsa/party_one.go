@@ -44,8 +44,9 @@ func CreatePartyOneCommitment() (fm P1KeyGenFirstMsg, witness CommitWitness, sec
 	}
 
 	// create a commitment to the zero-knowledge proof
+	randCommitBytes := cryptoutils.Marshal(dLogProof.RandCommit)
 	zk_commitment_blind := cryptoutils.RandomBig(cryptoutils.SECURITY_BITS)
-	pk_rand_commitment := new(big.Int).SetBytes(dLogProof.RandCommit.Marshal(curve))
+	pk_rand_commitment := new(big.Int).SetBytes(randCommitBytes)
 	zk_commitment, err := cryptoutils.CreateCommitmentWithDefinedRandomness(pk_rand_commitment, zk_commitment_blind)
 	if err != nil {
 		err = fmt.Errorf("cannot create commitment: %w", err)
@@ -141,18 +142,22 @@ func CreateEphemeralKey() (ephMsg P1EphemeralKeyGenFirstMsg, ephKey EphEcKeyPair
 	x, y := curve.ScalarBaseMult(k_bytes)
 
 	publicShare := cryptoutils.Point{X: x, Y: y}
-	secpPubShare, err := secp256k1.ParsePubKey(publicShare.Marshal(curve))
+	publicShareByte := cryptoutils.Marshal(publicShare)
+	fmt.Println("public share point: ", publicShare)
+
+	secpPubShare, err := secp256k1.ParsePubKey(publicShareByte)
 	if err != nil {
 		err = fmt.Errorf("cannot parse public key: %w", err)
 		return
 	}
+	fmt.Println("public share: ", secpPubShare)
 
 	h := cryptoutils.BasePoint2(curve)
-	w := &cryptoutils.ECDDHWitness{
+	w := cryptoutils.ECDDHWitness{
 		X: k_bytes,
 	}
 	c_x, c_y := curve.ScalarMult(h.X, h.Y, k_bytes)
-	delta := &cryptoutils.ECDDHStatement{
+	delta := cryptoutils.ECDDHStatement{
 		G1: base,
 		G2: h,
 		H1: publicShare,
@@ -185,7 +190,6 @@ func VerifyEphemeralCommitmentAndProof(ephMsg1 P2EphemeralKeyGenFirstMsg, ephMsg
 	p2_pk_commitment_bf := ephMsg2.CommitWitness.PkCommitmentBlindFactor
 	p2_dlog_proof := ephMsg2.CommitWitness.DlogProof
 	flag := true
-
 	// verify the commitment
 	p2_pub_share_commit, err := cryptoutils.CreateCommitmentWithDefinedRandomness(new(big.Int).SetBytes(p2_public_share), p2_pk_commitment_bf)
 	if err != nil {
@@ -218,13 +222,13 @@ func VerifyEphemeralCommitmentAndProof(ephMsg1 P2EphemeralKeyGenFirstMsg, ephMsg
 	}
 
 	pubShare := cryptoutils.Point{X: key.X(), Y: key.Y()}
-	delta := &cryptoutils.ECDDHStatement{
+	delta := cryptoutils.ECDDHStatement{
 		G1: cryptoutils.BasePoint(curve),
 		H1: pubShare,
 		G2: cryptoutils.BasePoint2(curve),
 		H2: ephMsg2.CommitWitness.C,
 	}
-	ok, err := p2_dlog_proof.Verify(curve, delta)
+	ok, err := cryptoutils.Verify(curve, p2_dlog_proof, delta)
 	if err != nil {
 		err = fmt.Errorf("cannot verify dlog proof: %w", err)
 		return
@@ -264,14 +268,6 @@ func ComputeSignature(partialSig PartialSignature, localShare EphEcKeyPair, remo
 	   1. id = R.y & 1
 	   2. if (s > curve.q / 2) id = id ^ 1
 	*/
-	// not so sure about this
-	// id := r_y.Bit(0)
-	// fmt.Println("id: ", id)
-	// if s_tag_tag.Cmp(new(big.Int).Sub(q, s)) > 0 {
-	// 	id ^= 1
-	// }
-	// fmt.Println("id: ", id)
-
 	sig, err = encodeSignature(r.Bytes(), s.Bytes())
 	if err != nil {
 		err = fmt.Errorf("cannot encode signature: %w", err)

@@ -7,6 +7,8 @@ import (
 	"crypto/sha256"
 	"errors"
 	"math/big"
+
+	"github.com/decred/dcrd/dcrec/secp256k1"
 )
 
 // This is an implementation of Schnorr's identification protocl for elliptic
@@ -49,27 +51,28 @@ func (p *Point) Equal(p2 Point) bool {
 	return false
 }
 
-func (p *Point) Marshal(curve elliptic.Curve) []byte {
-	return elliptic.Marshal(curve, p.X, p.Y)
+func Marshal(p Point) []byte {
+	curve := secp256k1.S256()
+	serial := elliptic.Marshal(curve, p.X, p.Y)
+	return serial
 }
 
-func (p *Point) Unmarshal(curve elliptic.Curve, data []byte) error {
-	// curve.ScalarBaseMult(data)
+func Unmarshal(data []byte) Point {
+	curve := secp256k1.S256()
+	p := Point{}
 	x, y := elliptic.Unmarshal(curve, data)
-	if x == nil {
-		return errors.New("invalid point")
-	}
 	p.X = x
 	p.Y = y
-	return nil
+	return p
 }
 
 func (p Point) Chain(curve elliptic.Curve, p2 Point) []byte {
 	buf := new(bytes.Buffer)
-	buf.Write(p.Marshal(curve))
-	buf.Write(p2.Marshal(curve))
+	pBytes := Marshal(p)
+	p2_bytes := Marshal(p2)
+	buf.Write(pBytes)
+	buf.Write(p2_bytes)
 	hash := sha256.New().Sum(buf.Bytes())
-
 	return hash
 }
 

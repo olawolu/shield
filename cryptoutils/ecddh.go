@@ -25,7 +25,7 @@ type ECDDHWitness struct {
 	X []byte
 }
 
-func NewEcddhProof(curve elliptic.Curve, w *ECDDHWitness, delta *ECDDHStatement) (*ECDDHProof, error) {
+func NewEcddhProof(curve elliptic.Curve, w ECDDHWitness, delta ECDDHStatement) (*ECDDHProof, error) {
 	s, err := rand.Int(rand.Reader, curve.Params().N)
 	if err != nil {
 		return nil, fmt.Errorf("error generating random number: %s", err)
@@ -46,7 +46,7 @@ func NewEcddhProof(curve elliptic.Curve, w *ECDDHWitness, delta *ECDDHStatement)
 	return proof, nil
 }
 
-func (proof *ECDDHProof) Verify(curve elliptic.Curve, delta *ECDDHStatement) (bool, error) {
+func Verify(curve elliptic.Curve, proof ECDDHProof, delta ECDDHStatement) (bool, error) {
 	var valid bool
 	var err error
 

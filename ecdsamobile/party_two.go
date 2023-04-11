@@ -17,17 +17,20 @@ import (
 func GenerateKeys() (fmBytes []byte, err error) {
 	curve := secp256k1.S256()
 	basePoint := cryptoutils.Point{X: curve.Params().Gx, Y: curve.Params().Gy}
+	basePointBytes := cryptoutils.Marshal(basePoint)
 
 	kg, secretShare, err := ecdsa.CreatePartyTwoShares()
 	if err != nil {
 		return
 	}
 
+	randCommitBytes := cryptoutils.Marshal(kg.DlogProof.RandCommit)
+	publicShareBytes := cryptoutils.Marshal(kg.DlogProof.PublicShare)
 	proof := &pb.DlogProof{
-		Base:        basePoint.Marshal(curve),
+		Base:        basePointBytes,
 		Challenge:   kg.DlogProof.Challenge.Bytes(),
-		Randcommit:  kg.DlogProof.RandCommit.Marshal(curve),
-		Publicshare: kg.DlogProof.PublicShare.Marshal(curve),
+		Randcommit:  randCommitBytes,
+		Publicshare: publicShareBytes,
 		Hiddenvalue: kg.DlogProof.HiddenValue.Bytes(),
 	}
 
@@ -97,7 +100,6 @@ func ComputePubKey(reqBytes []byte) ([]byte, error) {
 }
 
 func CreateEphemeralCommitments() (responseBytes []byte, err error) {
-	curve := secp256k1.S256()
 	msg, commit, key, err := ecdsa.CreateEphemeralCommitments()
 	if err != nil {
 		err = fmt.Errorf("cannot create ephemeral commitments: %w", err)
@@ -115,9 +117,11 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 	}
 
 	p := commit.DlogProof
+	a1 := cryptoutils.Marshal(p.A1)
+	a2 := cryptoutils.Marshal(p.A2)
 	proof := &pb.EcddhProof{
-		A1:        p.A1.Marshal(curve),
-		A2:        p.A2.Marshal(curve),
+		A1:        a1,
+		A2:        a2,
 		Z:         p.Z,
 		Hashcoice: p.HashChoice,
 	}
@@ -127,12 +131,13 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 		return
 	}
 
+	c := cryptoutils.Marshal(commit.C)
 	commitWitness := &pb.EphemeralCommitWitness{
 		Pkcommitmentblindfactor: commit.PkCommitmentBlindFactor.Bytes(),
 		Zkproofblindfactor:      commit.ZkPokBlindfactor.Bytes(),
 		Publicshare:             commit.PublicShare,
 		Dlogproof:               proofBytes,
-		C:                       commit.C.Marshal(curve),
+		C:                       c,
 	}
 
 	commitWitnessBytes, err := proto.Marshal(commitWitness)
@@ -165,56 +170,56 @@ func CreateEphemeralCommitments() (responseBytes []byte, err error) {
 
 func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err error) {
 	ephemeralKeyVerificationInput := &pb.EphemeralKeyVerificationInput{}
-	proto.Unmarshal(inputBytes, ephemeralKeyVerificationInput)
+	err = proto.Unmarshal(inputBytes, ephemeralKeyVerificationInput)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal input: %w", err)
+		return
+	}
 
 	curve := secp256k1.S256()
 	basePoint := cryptoutils.BasePoint(curve)
 	basePoint2 := cryptoutils.BasePoint2(curve)
-
-	var pubKeyPoint, cPoint *cryptoutils.Point
-
-	var keygenmsg *pb.P1EphemeralKeyGenFirstMessage
-	var witness *pb.EphemeralCommitWitness
-
+	keygenmsg := &pb.P1EphemeralKeyGenFirstMessage{}
 	if err = proto.Unmarshal(ephemeralKeyVerificationInput.KeyGenMsg, keygenmsg); err != nil {
 		err = fmt.Errorf("cannot unmarshal keygen message: %w", err)
 		return
 	}
 
+	witness := &pb.EphemeralCommitWitness{}
 	if err = proto.Unmarshal(ephemeralKeyVerificationInput.CommitWitness, witness); err != nil {
 		err = fmt.Errorf("cannot unmarshal witness: %w", err)
 		return
 	}
 
 	pubKey := keygenmsg.GetPublicshare()
-	c := witness.GetC()
-
-	if err = pubKeyPoint.Unmarshal(curve, pubKey); err != nil {
-		err = fmt.Errorf("cannot unmarshal public key: %w", err)
+	k, err := secp256k1.ParsePubKey(pubKey)
+	if err != nil {
+		err = fmt.Errorf("cannot parse public key: %w", err)
 		return
 	}
-
-	if err = cPoint.Unmarshal(curve, c); err != nil {
-		err = fmt.Errorf("cannot unmarshal c: %w", err)
-		return
-	}
+	pubKeyPoint := cryptoutils.NewPoint(k.X(), k.Y())
+	fmt.Println("pubKeyPoint", pubKeyPoint)
+	c := keygenmsg.GetC()
+	cPoint := cryptoutils.Unmarshal(c)
 
 	proofBytes := keygenmsg.GetEcddhProof()
 
+	// fmt.Println("proofBytes", proofBytes)
 	proof, err := pb.EcddhProofFromProto(proofBytes)
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal ecddh proof: %w", err)
 		return
 	}
+	fmt.Println("proof", proof)
 
 	// publicShare := cryptoutils.NewPoint(msg.PublicShare.X(), msg.PublicShare.Y())
-	delta := &cryptoutils.ECDDHStatement{
+	delta := cryptoutils.ECDDHStatement{
 		G1: basePoint,
-		H1: *pubKeyPoint,
+		H1: pubKeyPoint,
 		G2: basePoint2,
-		H2: *cPoint,
+		H2: cPoint,
 	}
-	ok, err := proof.Verify(curve, delta)
+	ok, err := cryptoutils.Verify(curve, *proof, delta)
 	if err != nil {
 		err = fmt.Errorf("cannot verify ecddh dlog proof: %w", err)
 		return

@@ -43,7 +43,8 @@ func PartyTwoVerifyCommitmentAndDlogProof(p1FirstMsg P1KeyGenFirstMsg, p1SecondM
 		Y: p1Public.Y(),
 	}
 
-	p1_pub_share_commit, err := cryptoutils.CreateCommitmentWithDefinedRandomness(new(big.Int).SetBytes(qPoint.Marshal(curve)), p1_pk_commitment_bf)
+	qPointBytes := cryptoutils.Marshal(qPoint)
+	p1_pub_share_commit, err := cryptoutils.CreateCommitmentWithDefinedRandomness(new(big.Int).SetBytes(qPointBytes), p1_pk_commitment_bf)
 	if err != nil {
 		err = fmt.Errorf("cannot verify commitment: %w", err)
 		return
@@ -53,7 +54,8 @@ func PartyTwoVerifyCommitmentAndDlogProof(p1FirstMsg P1KeyGenFirstMsg, p1SecondM
 		flag = false
 	}
 
-	p1_zk_commit, err := cryptoutils.CreateCommitmentWithDefinedRandomness(new(big.Int).SetBytes(p1_dlog_proof.RandCommit.Marshal(curve)), p1_zk_blind_factor)
+	randCommitBytes := cryptoutils.Marshal(p1_dlog_proof.RandCommit)
+	p1_zk_commit, err := cryptoutils.CreateCommitmentWithDefinedRandomness(new(big.Int).SetBytes(randCommitBytes), p1_zk_blind_factor)
 	if err != nil {
 		err = fmt.Errorf("cannot verify commitment: %w", err)
 		return
@@ -94,9 +96,8 @@ func CreateEphemeralCommitments() (ephMsg P2EphemeralKeyGenFirstMsg, ephCommit E
 	publicShare := cryptoutils.NewPoint(x, y)
 	randomBase := cryptoutils.BasePoint2(curve)
 
-	key := publicShare.Marshal(curve)
-
-	sKey, err := secp256k1.ParsePubKey(key)
+	publicShareBytes := cryptoutils.Marshal(publicShare)
+	sKey, err := secp256k1.ParsePubKey(publicShareBytes)
 	if err != nil {
 		err = fmt.Errorf("cannot parse public key: %w", err)
 		return
@@ -105,13 +106,13 @@ func CreateEphemeralCommitments() (ephMsg P2EphemeralKeyGenFirstMsg, ephCommit E
 	c_x, c_y := curve.ScalarMult(randomBase.X, randomBase.Y, k_bytes)
 	c := cryptoutils.NewPoint(c_x, c_y)
 
-	delta := &cryptoutils.ECDDHStatement{
+	delta := cryptoutils.ECDDHStatement{
 		G1: basePoint,
 		G2: randomBase,
 		H1: publicShare,
 		H2: c,
 	}
-	witness := &cryptoutils.ECDDHWitness{
+	witness := cryptoutils.ECDDHWitness{
 		X: k_bytes,
 	}
 
@@ -122,8 +123,9 @@ func CreateEphemeralCommitments() (ephMsg P2EphemeralKeyGenFirstMsg, ephCommit E
 	}
 
 	// use hash based commitment
+	public_share_bytes := cryptoutils.Marshal(publicShare)
 	pk_commitment_bf := cryptoutils.RandomBig(cryptoutils.SECURITY_BITS)
-	pk_commitment, err := cryptoutils.CreateCommitmentWithDefinedRandomness(new(big.Int).SetBytes(publicShare.Marshal(curve)), pk_commitment_bf)
+	pk_commitment, err := cryptoutils.CreateCommitmentWithDefinedRandomness(new(big.Int).SetBytes(public_share_bytes), pk_commitment_bf)
 	if err != nil {
 		err = fmt.Errorf("cannot create commitment: %w", err)
 		return
@@ -157,13 +159,13 @@ func VerifyEphemeralKeyAndDecommit(msg P1EphemeralKeyGenFirstMsg, ephCommit Ephe
 	basePoint := cryptoutils.BasePoint(curve)
 	basePoint2 := cryptoutils.BasePoint2(curve)
 	publicShare := cryptoutils.NewPoint(msg.PublicShare.X(), msg.PublicShare.Y())
-	delta := &cryptoutils.ECDDHStatement{
+	delta := cryptoutils.ECDDHStatement{
 		G1: basePoint,
 		H1: publicShare,
 		G2: basePoint2,
 		H2: msg.C,
 	}
-	ok, err := msg.DlogProof.Verify(curve, delta)
+	ok, err := cryptoutils.Verify(curve, msg.DlogProof, delta)
 	if err != nil {
 		err = fmt.Errorf("cannot verify ecddh dlog proof: %w", err)
 		return
@@ -215,14 +217,6 @@ func ComputePartialSignature(paillierKey *PaillierKeyPair, encryptionKey *pailli
 
 	// add c1 and c2
 	c3 := encryptionKey.Add(c1, c2)
-
-	// pub := &ecdsa.PublicKey{
-	// 	Curve: curve,
-	// 	X:     p.PublicKey.X,
-	// 	Y:     p.PublicKey.Y,
-	// }
-	// fmt.Println("pub: ", pub)
-
 	sig = PartialSignature{
 		C3: c3,
 	}
