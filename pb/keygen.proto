@@ -121,3 +121,28 @@ message WalletAddress {
     bytes publicKey = 1;
     string address = 2;
 }
+
+message Transaction {
+    bytes chainId = 1;
+    bytes nonce = 2;
+    bytes maxFeePerGas = 3;
+    bytes maxPriorityFeePerGas = 4;
+    bytes gasLimit = 5;
+    bytes destination = 6;
+    bytes amount = 7;
+    bytes data = 8;
+    repeated bytes accessList = 9;
+    bytes signatureYParity = 10;
+    bytes signatureR = 11;
+    bytes signatureS = 12;
+}
+
+enum MessageType {
+    TRANSACTION = 0;
+    ARBITRARY = 1;
+}
+
+message UnsignedMessage {
+    MessageType messageType = 1; 
+    bytes content = 2;
+}

@@ -1,6 +1,7 @@
 package ecdsa
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"errors"
@@ -10,9 +11,12 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
+	"github.com/helicarrierstudio/tss-lib/pb"
 	"golang.org/x/crypto/cryptobyte"
 	"golang.org/x/crypto/cryptobyte/asn1"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -241,7 +245,8 @@ func VerifyEphemeralCommitmentAndProof(ephMsg1 P2EphemeralKeyGenFirstMsg, ephMsg
 	return
 }
 
-func ComputeSignature(partialSig PartialSignature, localShare EphEcKeyPair, remoteShare []byte, decryptionKey *paillier.PrivateKey) (sig []byte, err error) {
+func ComputeSignature(partialSig PartialSignature, localShare EphEcKeyPair, remoteShare, msg []byte, decryptionKey *paillier.PrivateKey) (sig, rawTx []byte, err error) {
+	var tx []byte
 	q := curve.Params().N
 	k1 := new(big.Int).SetBytes(localShare.SecretShare)
 
@@ -250,27 +255,54 @@ func ComputeSignature(partialSig PartialSignature, localShare EphEcKeyPair, remo
 		err = fmt.Errorf("cannot parse public key: %w", err)
 		return
 	}
+
 	// compute r = k2 * R1
-	r_x, _ := curve.ScalarMult(remoteKey.X(), remoteKey.Y(), k1.Bytes())
+	r_x, r_y := curve.ScalarMult(remoteKey.X(), remoteKey.Y(), k1.Bytes())
 	r := new(big.Int).Mod(r_x, q)
 
 	k1_inv := new(big.Int).ModInverse(k1, q)
 
 	var s *big.Int
-
 	s_tag := decryptionKey.Decrypt(partialSig.C3)
 	s_tag_tag := new(big.Int).Mul(s_tag, k1_inv)
 	s = new(big.Int).Mod(s_tag_tag, q)
 
-	/*
-	   Calculate recovery id - it is not possible to compute the public key out of the signature
-	   itself. Recovery id is used to enable extracting the public key uniquely.
-	   1. id = R.y & 1
-	   2. if (s > curve.q / 2) id = id ^ 1
-	*/
+	message := &pb.UnsignedMessage{}
+	err = proto.Unmarshal(msg, message)
+	if err != nil {
+		err = fmt.Errorf("cannot unmarshal unsigned message: %w", err)
+		return
+	}
+
 	sig, err = encodeSignature(r.Bytes(), s.Bytes())
 	if err != nil {
 		err = fmt.Errorf("cannot encode signature: %w", err)
+		return
+	}
+
+	switch message.GetMessageType() {
+	case pb.MessageType_TRANSACTION:
+		var rlpTx []byte
+		signedTx := &pb.Transaction{}
+		err = proto.Unmarshal(tx, signedTx)
+		if err != nil {
+			err = fmt.Errorf("cannot unmarshal transaction: %w", err)
+			return
+		}
+
+		signedTx.SignatureYParity = []byte{byte(r_y.Bit(0))}
+		signedTx.SignatureR = r.Bytes()
+		signedTx.SignatureS = s.Bytes()
+
+		// rlp encode the signed transaction
+		// rawTx = 0x02 || rlp(signedTx)
+		rlpTx, err = rlpEncodeTransaction(signedTx)
+		if err != nil {
+			err = fmt.Errorf("cannot rlp encode transaction: %w", err)
+			return
+		}
+		rawTx = append([]byte{2}, rlpTx...)
+	case pb.MessageType_ARBITRARY:
 		return
 	}
 	return
@@ -312,4 +344,15 @@ func addASN1IntBytes(b *cryptobyte.Builder, bytes []byte) {
 		}
 		c.AddBytes(bytes)
 	})
+}
+
+func rlpEncodeTransaction(msg *pb.Transaction) ([]byte, error) {
+	// create a buffer to encode the tx
+	var buf bytes.Buffer
+	err := rlp.Encode(&buf, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }

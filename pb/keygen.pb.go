@@ -20,6 +20,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type MessageType int32
+
+const (
+	MessageType_TRANSACTION MessageType = 0
+	MessageType_ARBITRARY   MessageType = 1
+)
+
+// Enum value maps for MessageType.
+var (
+	MessageType_name = map[int32]string{
+		0: "TRANSACTION",
+		1: "ARBITRARY",
+	}
+	MessageType_value = map[string]int32{
+		"TRANSACTION": 0,
+		"ARBITRARY":   1,
+	}
+)
+
+func (x MessageType) Enum() *MessageType {
+	p := new(MessageType)
+	*p = x
+	return p
+}
+
+func (x MessageType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MessageType) Descriptor() protoreflect.EnumDescriptor {
+	return file_keygen_proto_enumTypes[0].Descriptor()
+}
+
+func (MessageType) Type() protoreflect.EnumType {
+	return &file_keygen_proto_enumTypes[0]
+}
+
+func (x MessageType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MessageType.Descriptor instead.
+func (MessageType) EnumDescriptor() ([]byte, []int) {
+	return file_keygen_proto_rawDescGZIP(), []int{0}
+}
+
 type DlogProof struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1295,6 +1341,196 @@ func (x *WalletAddress) GetAddress() string {
 	return ""
 }
 
+type Transaction struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ChainId              []byte   `protobuf:"bytes,1,opt,name=chainId,proto3" json:"chainId,omitempty"`
+	Nonce                []byte   `protobuf:"bytes,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	MaxFeePerGas         []byte   `protobuf:"bytes,3,opt,name=maxFeePerGas,proto3" json:"maxFeePerGas,omitempty"`
+	MaxPriorityFeePerGas []byte   `protobuf:"bytes,4,opt,name=maxPriorityFeePerGas,proto3" json:"maxPriorityFeePerGas,omitempty"`
+	GasLimit             []byte   `protobuf:"bytes,5,opt,name=gasLimit,proto3" json:"gasLimit,omitempty"`
+	Destination          []byte   `protobuf:"bytes,6,opt,name=destination,proto3" json:"destination,omitempty"`
+	Amount               []byte   `protobuf:"bytes,7,opt,name=amount,proto3" json:"amount,omitempty"`
+	Data                 []byte   `protobuf:"bytes,8,opt,name=data,proto3" json:"data,omitempty"`
+	AccessList           [][]byte `protobuf:"bytes,9,rep,name=accessList,proto3" json:"accessList,omitempty"`
+	SignatureYParity     []byte   `protobuf:"bytes,10,opt,name=signatureYParity,proto3" json:"signatureYParity,omitempty"`
+	SignatureR           []byte   `protobuf:"bytes,11,opt,name=signatureR,proto3" json:"signatureR,omitempty"`
+	SignatureS           []byte   `protobuf:"bytes,12,opt,name=signatureS,proto3" json:"signatureS,omitempty"`
+}
+
+func (x *Transaction) Reset() {
+	*x = Transaction{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_keygen_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Transaction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Transaction) ProtoMessage() {}
+
+func (x *Transaction) ProtoReflect() protoreflect.Message {
+	mi := &file_keygen_proto_msgTypes[21]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Transaction.ProtoReflect.Descriptor instead.
+func (*Transaction) Descriptor() ([]byte, []int) {
+	return file_keygen_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *Transaction) GetChainId() []byte {
+	if x != nil {
+		return x.ChainId
+	}
+	return nil
+}
+
+func (x *Transaction) GetNonce() []byte {
+	if x != nil {
+		return x.Nonce
+	}
+	return nil
+}
+
+func (x *Transaction) GetMaxFeePerGas() []byte {
+	if x != nil {
+		return x.MaxFeePerGas
+	}
+	return nil
+}
+
+func (x *Transaction) GetMaxPriorityFeePerGas() []byte {
+	if x != nil {
+		return x.MaxPriorityFeePerGas
+	}
+	return nil
+}
+
+func (x *Transaction) GetGasLimit() []byte {
+	if x != nil {
+		return x.GasLimit
+	}
+	return nil
+}
+
+func (x *Transaction) GetDestination() []byte {
+	if x != nil {
+		return x.Destination
+	}
+	return nil
+}
+
+func (x *Transaction) GetAmount() []byte {
+	if x != nil {
+		return x.Amount
+	}
+	return nil
+}
+
+func (x *Transaction) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *Transaction) GetAccessList() [][]byte {
+	if x != nil {
+		return x.AccessList
+	}
+	return nil
+}
+
+func (x *Transaction) GetSignatureYParity() []byte {
+	if x != nil {
+		return x.SignatureYParity
+	}
+	return nil
+}
+
+func (x *Transaction) GetSignatureR() []byte {
+	if x != nil {
+		return x.SignatureR
+	}
+	return nil
+}
+
+func (x *Transaction) GetSignatureS() []byte {
+	if x != nil {
+		return x.SignatureS
+	}
+	return nil
+}
+
+type UnsignedMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	MessageType MessageType `protobuf:"varint,1,opt,name=messageType,proto3,enum=tsslib.MessageType" json:"messageType,omitempty"`
+	Content     []byte      `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+}
+
+func (x *UnsignedMessage) Reset() {
+	*x = UnsignedMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_keygen_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UnsignedMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnsignedMessage) ProtoMessage() {}
+
+func (x *UnsignedMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_keygen_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnsignedMessage.ProtoReflect.Descriptor instead.
+func (*UnsignedMessage) Descriptor() ([]byte, []int) {
+	return file_keygen_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *UnsignedMessage) GetMessageType() MessageType {
+	if x != nil {
+		return x.MessageType
+	}
+	return MessageType_TRANSACTION
+}
+
+func (x *UnsignedMessage) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
 var File_keygen_proto protoreflect.FileDescriptor
 
 var file_keygen_proto_rawDesc = []byte{
@@ -1438,8 +1674,42 @@ var file_keygen_proto_rawDesc = []byte{
 	0x1c, 0x0a, 0x09, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x0c, 0x52, 0x09, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0x4b, 0x65, 0x79, 0x12, 0x18, 0x0a,
 	0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
-	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x42, 0x06, 0x5a, 0x04, 0x2e, 0x2f, 0x70, 0x62, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x8b, 0x03, 0x0a, 0x0b, 0x54, 0x72, 0x61, 0x6e,
+	0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x49, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49,
+	0x64, 0x12, 0x14, 0x0a, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x05, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0x12, 0x22, 0x0a, 0x0c, 0x6d, 0x61, 0x78, 0x46, 0x65,
+	0x65, 0x50, 0x65, 0x72, 0x47, 0x61, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0c, 0x6d,
+	0x61, 0x78, 0x46, 0x65, 0x65, 0x50, 0x65, 0x72, 0x47, 0x61, 0x73, 0x12, 0x32, 0x0a, 0x14, 0x6d,
+	0x61, 0x78, 0x50, 0x72, 0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x46, 0x65, 0x65, 0x50, 0x65, 0x72,
+	0x47, 0x61, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x14, 0x6d, 0x61, 0x78, 0x50, 0x72,
+	0x69, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x46, 0x65, 0x65, 0x50, 0x65, 0x72, 0x47, 0x61, 0x73, 0x12,
+	0x1a, 0x0a, 0x08, 0x67, 0x61, 0x73, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x0c, 0x52, 0x08, 0x67, 0x61, 0x73, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x64,
+	0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x0b, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a,
+	0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x61,
+	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x08, 0x20,
+	0x01, 0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x1e, 0x0a, 0x0a, 0x61, 0x63, 0x63,
+	0x65, 0x73, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x18, 0x09, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x0a, 0x61,
+	0x63, 0x63, 0x65, 0x73, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x2a, 0x0a, 0x10, 0x73, 0x69, 0x67,
+	0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x59, 0x50, 0x61, 0x72, 0x69, 0x74, 0x79, 0x18, 0x0a, 0x20,
+	0x01, 0x28, 0x0c, 0x52, 0x10, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x59, 0x50,
+	0x61, 0x72, 0x69, 0x74, 0x79, 0x12, 0x1e, 0x0a, 0x0a, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75,
+	0x72, 0x65, 0x52, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x73, 0x69, 0x67, 0x6e, 0x61,
+	0x74, 0x75, 0x72, 0x65, 0x52, 0x12, 0x1e, 0x0a, 0x0a, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75,
+	0x72, 0x65, 0x53, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x73, 0x69, 0x67, 0x6e, 0x61,
+	0x74, 0x75, 0x72, 0x65, 0x53, 0x22, 0x62, 0x0a, 0x0f, 0x55, 0x6e, 0x73, 0x69, 0x67, 0x6e, 0x65,
+	0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x35, 0x0a, 0x0b, 0x6d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x54, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x13, 0x2e,
+	0x74, 0x73, 0x73, 0x6c, 0x69, 0x62, 0x2e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x54, 0x79,
+	0x70, 0x65, 0x52, 0x0b, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12,
+	0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2a, 0x2d, 0x0a, 0x0b, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0f, 0x0a, 0x0b, 0x54, 0x52, 0x41, 0x4e,
+	0x53, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x41, 0x52, 0x42,
+	0x49, 0x54, 0x52, 0x41, 0x52, 0x59, 0x10, 0x01, 0x42, 0x06, 0x5a, 0x04, 0x2e, 0x2f, 0x70, 0x62,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1454,36 +1724,41 @@ func file_keygen_proto_rawDescGZIP() []byte {
 	return file_keygen_proto_rawDescData
 }
 
-var file_keygen_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_keygen_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_keygen_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_keygen_proto_goTypes = []interface{}{
-	(*DlogProof)(nil),                      // 0: tsslib.DlogProof
-	(*EcddhProof)(nil),                     // 1: tsslib.EcddhProof
-	(*EcddhStatement)(nil),                 // 2: tsslib.EcddhStatement
-	(*EcddhWitness)(nil),                   // 3: tsslib.EcddhWitness
-	(*P2KeyGenFirstMessage)(nil),           // 4: tsslib.P2KeyGenFirstMessage
-	(*P1KeyGenFirstMessage)(nil),           // 5: tsslib.P1KeyGenFirstMessage
-	(*CommitWitness)(nil),                  // 6: tsslib.CommitWitness
-	(*P1KeyGenSecondMessage)(nil),          // 7: tsslib.P1KeyGenSecondMessage
-	(*PublicKeyRequest)(nil),               // 8: tsslib.PublicKeyRequest
-	(*PublicKeyResponse)(nil),              // 9: tsslib.PublicKeyResponse
-	(*EphemeralCommitWitness)(nil),         // 10: tsslib.EphemeralCommitWitness
-	(*P1EphemeralKeyGenFirstMessage)(nil),  // 11: tsslib.P1EphemeralKeyGenFirstMessage
-	(*P2EphemeralKeyGenFirstMessage)(nil),  // 12: tsslib.P2EphemeralKeyGenFirstMessage
-	(*P2EphemeralKeyGenSecondMessage)(nil), // 13: tsslib.P2EphemeralKeyGenSecondMessage
-	(*EphemeralEcKeyPair)(nil),             // 14: tsslib.EphemeralEcKeyPair
-	(*P2EphemeralCommitmentsResponse)(nil), // 15: tsslib.P2EphemeralCommitmentsResponse
-	(*EphemeralKeyVerificationInput)(nil),  // 16: tsslib.EphemeralKeyVerificationInput
-	(*PaillierKeys)(nil),                   // 17: tsslib.PaillierKeys
-	(*PartialSignatureInput)(nil),          // 18: tsslib.PartialSignatureInput
-	(*PartialSignatureOutput)(nil),         // 19: tsslib.PartialSignatureOutput
-	(*WalletAddress)(nil),                  // 20: tsslib.WalletAddress
+	(MessageType)(0),                       // 0: tsslib.MessageType
+	(*DlogProof)(nil),                      // 1: tsslib.DlogProof
+	(*EcddhProof)(nil),                     // 2: tsslib.EcddhProof
+	(*EcddhStatement)(nil),                 // 3: tsslib.EcddhStatement
+	(*EcddhWitness)(nil),                   // 4: tsslib.EcddhWitness
+	(*P2KeyGenFirstMessage)(nil),           // 5: tsslib.P2KeyGenFirstMessage
+	(*P1KeyGenFirstMessage)(nil),           // 6: tsslib.P1KeyGenFirstMessage
+	(*CommitWitness)(nil),                  // 7: tsslib.CommitWitness
+	(*P1KeyGenSecondMessage)(nil),          // 8: tsslib.P1KeyGenSecondMessage
+	(*PublicKeyRequest)(nil),               // 9: tsslib.PublicKeyRequest
+	(*PublicKeyResponse)(nil),              // 10: tsslib.PublicKeyResponse
+	(*EphemeralCommitWitness)(nil),         // 11: tsslib.EphemeralCommitWitness
+	(*P1EphemeralKeyGenFirstMessage)(nil),  // 12: tsslib.P1EphemeralKeyGenFirstMessage
+	(*P2EphemeralKeyGenFirstMessage)(nil),  // 13: tsslib.P2EphemeralKeyGenFirstMessage
+	(*P2EphemeralKeyGenSecondMessage)(nil), // 14: tsslib.P2EphemeralKeyGenSecondMessage
+	(*EphemeralEcKeyPair)(nil),             // 15: tsslib.EphemeralEcKeyPair
+	(*P2EphemeralCommitmentsResponse)(nil), // 16: tsslib.P2EphemeralCommitmentsResponse
+	(*EphemeralKeyVerificationInput)(nil),  // 17: tsslib.EphemeralKeyVerificationInput
+	(*PaillierKeys)(nil),                   // 18: tsslib.PaillierKeys
+	(*PartialSignatureInput)(nil),          // 19: tsslib.PartialSignatureInput
+	(*PartialSignatureOutput)(nil),         // 20: tsslib.PartialSignatureOutput
+	(*WalletAddress)(nil),                  // 21: tsslib.WalletAddress
+	(*Transaction)(nil),                    // 22: tsslib.Transaction
+	(*UnsignedMessage)(nil),                // 23: tsslib.UnsignedMessage
 }
 var file_keygen_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: tsslib.UnsignedMessage.messageType:type_name -> tsslib.MessageType
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_keygen_proto_init() }
@@ -1744,19 +2019,44 @@ func file_keygen_proto_init() {
 				return nil
 			}
 		}
+		file_keygen_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Transaction); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_keygen_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UnsignedMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_keygen_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   21,
+			NumEnums:      1,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_keygen_proto_goTypes,
 		DependencyIndexes: file_keygen_proto_depIdxs,
+		EnumInfos:         file_keygen_proto_enumTypes,
 		MessageInfos:      file_keygen_proto_msgTypes,
 	}.Build()
 	File_keygen_proto = out.File

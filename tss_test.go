@@ -2,13 +2,15 @@ package tss_test
 
 import (
 	"crypto/elliptic"
+	"encoding/hex"
 	"fmt"
-	"math/big"
 	"testing"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/helicarrierstudio/tss-lib/ecdsa"
+	"github.com/helicarrierstudio/tss-lib/pb"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestDlogProof(t *testing.T) {
@@ -112,17 +114,27 @@ func TestTwoPartySign(t *testing.T) {
 
 	assert.Equal(t, pubKey, pubKey2)
 
-	message := big.NewInt(1234567890)
+	// message := big.NewInt(1234567890)
+	destination, _ := hex.DecodeString("0x43B7D573c88BB0c4165f7831d9A14657906F689A")
+	msg := pb.Transaction{
+		ChainId:     []byte{byte(1)},
+		Nonce:       []byte{byte(1)},
+		Destination: destination,
+		Amount:      []byte{byte(100)},
+		GasLimit:    []byte{byte(100)},
+	}
+
+	message, _ := proto.Marshal(&msg)
 
 	// fmt.Println("key", paillier_key_pair.EncryptionKey)
-	partial_sig, err := ecdsa.ComputePartialSignature(paillier_key_pair, paillier_key_pair.EncryptionKey, paillier_key_pair.EncryptedShare, eph_ec_key_pair_p2, eph_p1_first_msg.PublicShare, message.Bytes(), p2_secret)
+	partial_sig, err := ecdsa.ComputePartialSignature(paillier_key_pair, paillier_key_pair.EncryptionKey, paillier_key_pair.EncryptedShare, eph_ec_key_pair_p2, eph_p1_first_msg.PublicShare, message, p2_secret)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, partial_sig)
 
-	signature, err := ecdsa.ComputeSignature(partial_sig, eph_ec_key_pair_p1, eph_p2_secondMsg.CommitWitness.PublicShare, paillier_key_pair.DecryptionKey)
+	signature, _, err := ecdsa.ComputeSignature(partial_sig, eph_ec_key_pair_p1, eph_p2_secondMsg.CommitWitness.PublicShare, message, paillier_key_pair.DecryptionKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, signature)
 
-	ok := ecdsa.VerifySignature(signature, pubKey, message.Bytes())
+	ok := ecdsa.VerifySignature(signature, pubKey, message)
 	assert.True(t, ok)
 }

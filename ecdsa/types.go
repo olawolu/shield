@@ -1,7 +1,6 @@
 package ecdsa
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
@@ -66,19 +65,4 @@ type EphEcKeyPair struct {
 
 type PartialSignature struct {
 	C3 *paillier.Cypher
-}
-
-type Signature struct {
-	R *big.Int
-	S *big.Int
-	V uint
-}
-
-func (s *Signature) Bytes() ([]byte, error) {
-	buf := make([]byte, 0, 65)
-	fmt.Println("signature id: ", byte(s.V))
-	buf = append(buf, s.R.Bytes()...)
-	buf = append(buf, s.S.Bytes()...)
-	buf = append(buf, byte(s.V))
-	return buf, nil
 }

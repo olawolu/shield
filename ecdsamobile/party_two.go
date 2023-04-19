@@ -8,6 +8,7 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 	"github.com/helicarrierstudio/tss-lib/ecdsa"
 	"github.com/helicarrierstudio/tss-lib/pb"
@@ -64,9 +65,9 @@ func VerifyCommitmentAndDlogProof(p1FirstMsgBytes []byte, p1SecondMsgBytes []byt
 		return err
 	}
 
-	p1_first_msg := pb.P1FirstMessageFromProto(p1FirstMsg)
+	p1_first_msg := P1FirstMessageFromProto(p1FirstMsg)
 	// proto.Unmarshal()
-	p1_second_msg, err := pb.P1SecondMessageFromProto(p1SecondMsg)
+	p1_second_msg, err := P1SecondMessageFromProto(p1SecondMsg)
 	if err != nil {
 		return err
 	}
@@ -98,7 +99,7 @@ func ComputePubKey(reqBytes []byte) ([]byte, error) {
 	}
 	addr := crypto.PubkeyToAddress(*secp256key.ToECDSA())
 	address := crypto.CreateAddress(addr, 0)
-	
+
 	wallet := pb.WalletAddress{}
 	wallet.Address = address.Hex()
 	wallet.PublicKey = key_bytes
@@ -217,7 +218,7 @@ func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err e
 	proofBytes := keygenmsg.GetEcddhProof()
 
 	// fmt.Println("proofBytes", proofBytes)
-	proof, err := pb.EcddhProofFromProto(proofBytes)
+	proof, err := EcddhProofFromProto(proofBytes)
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal ecddh proof: %w", err)
 		return
@@ -276,6 +277,21 @@ func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) 
 	encryptionKey := input.ek
 	encryptedShare := input.es
 
+	m := &pb.UnsignedMessage{}
+	err = proto.Unmarshal(msg, m)
+	if err != nil {
+		return nil, err
+	}
+
+	messageContent := m.GetContent()
+
+	encodedMsg, err := rlpEncode(messageContent)
+	if err != nil {
+		return nil, err
+	}
+
+	msgInt := new(big.Int).SetBytes(encodedMsg)
+
 	r_x, _ := curve.ScalarMult(p1_pk.X(), p1_pk.Y(), ephemeralSecret)
 	// r = R_x mod q
 	fmt.Println("r_x", r_x)
@@ -286,31 +302,24 @@ func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) 
 	rho, _ := rand.Int(rand.Reader, new(big.Int).Exp(q, big.NewInt(2), nil))
 	k := new(big.Int).SetBytes(ephemeralSecret)
 	k_inv := new(big.Int).ModInverse(k, q)
-	k_inv_m := new(big.Int).Mul(msg, k_inv)
+	k_inv_m := new(big.Int).Mul(msgInt, k_inv)
 	partialSig := new(big.Int).Add(new(big.Int).Mul(rho, q), k_inv_m.Mod(k_inv_m, q))
 
 	c1, err := encryptionKey.Encrypt(partialSig, rand.Reader)
 	pk_2 := new(big.Int).SetBytes(localSecret)
 	rx_pk2 := new(big.Int).Mul(r_x, pk_2)
 	rx_pk2_mod := new(big.Int).Mod(rx_pk2, q)
+
 	// v = k_2^-1 * R_x * pk_2 mod q
 	v := new(big.Int).Mod(new(big.Int).Mul(k_inv, rx_pk2_mod), q)
-
-	// e_pk_1 := encryptedShare.C
-	// fmt.Println("k_inv", k_inv)
-	// fmt.Println("k", k)
 
 	if err != nil {
 		err = fmt.Errorf("cannot encrypt: %w", err)
 		return
 	}
-	// stuff := new(big.Int).Add(new(big.Int).Mul(encryptedShare.C, v), partialSig)
-	// fmt.Println("stuff", stuff)
-	// fmt.Println("stuff length", stuff.BitLen())
+
 	c2 := encryptionKey.Mul(encryptedShare, v)
 	c3 := encryptionKey.Add(c1, c2)
-	// fmt.Println("msg", msg)
-
 	sig := &pb.PartialSignatureOutput{
 		C3: c3.C.Bytes(),
 	}
@@ -322,7 +331,7 @@ func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) 
 type parsedSigInput struct {
 	ek              *paillier.PublicKey
 	es              *paillier.Cypher
-	msg             *big.Int
+	msg             []byte
 	localSecret     []byte
 	remoteKey       *secp256k1.PublicKey
 	ephemeralSecret []byte
@@ -354,6 +363,28 @@ func parseSignatureInput(input *pb.PartialSignatureInput) (*parsedSigInput, erro
 		localSecret:     localSecret,
 		ephemeralSecret: ephemeralSecret,
 		remoteKey:       p1_pk,
-		msg:             new(big.Int).SetBytes(msg),
+		msg:             msg,
 	}, nil
+}
+
+func rlpEncode(msg []byte) ([]byte, error) {
+	tx := &pb.Transaction{}
+	err := proto.Unmarshal(msg, tx)
+	if err != nil {
+		return nil, err
+	}
+	// create a buffer to encode the tx
+	// var buf bytes.Buffer
+	encoding, err := rlp.EncodeToBytes(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return encoding, nil
+}
+
+func calculateV(parity, chainIdInt uint64) uint64 {
+	chainIdInt *= 2
+	v := parity + 35 + chainIdInt
+	return v
 }
