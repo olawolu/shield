@@ -65,9 +65,9 @@ func VerifyCommitmentAndDlogProof(p1FirstMsgBytes []byte, p1SecondMsgBytes []byt
 		return err
 	}
 
-	p1_first_msg := P1FirstMessageFromProto(p1FirstMsg)
+	p1_first_msg := ecdsa.P1FirstMessageFromProto(p1FirstMsg)
 	// proto.Unmarshal()
-	p1_second_msg, err := P1SecondMessageFromProto(p1SecondMsg)
+	p1_second_msg, err := ecdsa.P1SecondMessageFromProto(p1SecondMsg)
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err e
 	proofBytes := keygenmsg.GetEcddhProof()
 
 	// fmt.Println("proofBytes", proofBytes)
-	proof, err := EcddhProofFromProto(proofBytes)
+	proof, err := ecdsa.EcddhProofFromProto(proofBytes)
 	if err != nil {
 		err = fmt.Errorf("cannot unmarshal ecddh proof: %w", err)
 		return
