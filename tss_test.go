@@ -131,7 +131,7 @@ func TestTwoPartySign(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, partial_sig)
 
-	signature, _, err := ecdsa.ComputeSignature(partial_sig, eph_ec_key_pair_p1, eph_p2_secondMsg.CommitWitness.PublicShare, message, paillier_key_pair.DecryptionKey)
+	signature, err := ecdsa.ComputeSignature(partial_sig, eph_ec_key_pair_p1, eph_p2_secondMsg.CommitWitness.PublicShare, paillier_key_pair.DecryptionKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, signature)
 

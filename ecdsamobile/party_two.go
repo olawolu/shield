@@ -8,7 +8,6 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/helicarrierstudio/tss-lib/cryptoutils"
 	"github.com/helicarrierstudio/tss-lib/ecdsa"
 	"github.com/helicarrierstudio/tss-lib/pb"
@@ -253,8 +252,8 @@ func VerifyEphemeralKeyAndDecommit(inputBytes []byte) (ephMsgBytes []byte, err e
 func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) {
 	partialSigInput := &pb.PartialSignatureInput{}
 	err = proto.Unmarshal(partialSigInputBytes, partialSigInput)
-
 	if err != nil {
+		err = fmt.Errorf("cannot unmarshal input: %w", err)
 		return nil, err
 	}
 	// z = hash(msg), e_pk_1 = encrypted share of party 1
@@ -277,20 +276,7 @@ func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) 
 	encryptionKey := input.ek
 	encryptedShare := input.es
 
-	m := &pb.UnsignedMessage{}
-	err = proto.Unmarshal(msg, m)
-	if err != nil {
-		return nil, err
-	}
-
-	messageContent := m.GetContent()
-
-	encodedMsg, err := rlpEncode(messageContent)
-	if err != nil {
-		return nil, err
-	}
-
-	msgInt := new(big.Int).SetBytes(encodedMsg)
+	msgInt := new(big.Int).SetBytes(msg)
 
 	r_x, _ := curve.ScalarMult(p1_pk.X(), p1_pk.Y(), ephemeralSecret)
 	// r = R_x mod q
@@ -325,6 +311,10 @@ func PartialSignature(partialSigInputBytes []byte) (sigBytes []byte, err error) 
 	}
 
 	sigBytes, err = proto.Marshal(sig)
+	if err != nil {
+		err = fmt.Errorf("cannot marshal signature: %w", err)
+		return
+	}
 	return
 }
 
@@ -365,22 +355,6 @@ func parseSignatureInput(input *pb.PartialSignatureInput) (*parsedSigInput, erro
 		remoteKey:       p1_pk,
 		msg:             msg,
 	}, nil
-}
-
-func rlpEncode(msg []byte) ([]byte, error) {
-	tx := &pb.Transaction{}
-	err := proto.Unmarshal(msg, tx)
-	if err != nil {
-		return nil, err
-	}
-	// create a buffer to encode the tx
-	// var buf bytes.Buffer
-	encoding, err := rlp.EncodeToBytes(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	return encoding, nil
 }
 
 func calculateV(parity, chainIdInt uint64) uint64 {
