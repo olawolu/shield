@@ -43,7 +43,6 @@ func TestPoints(t *testing.T) {
 	base1_2 := cryptoutils.BasePoint(elliptic.P256())
 	assert.Equal(t, base1_1, base1_2)
 
-	base2_1 := cryptoutils.BasePoint2(elliptic.P256())
-	base2_2 := cryptoutils.BasePoint2(elliptic.P256())
-	assert.NotEqual(t, base2_1, base2_2)
+	base2 := cryptoutils.BasePoint2(elliptic.P256())
+	assert.NotEqual(t, base2, base1_2)
 }
