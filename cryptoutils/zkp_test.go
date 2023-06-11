@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/helicarrierstudio/tss-lib/cryptoutils"
+	"github.com/olawolu/shield/cryptoutils"
 	"github.com/stretchr/testify/assert"
 )
 
