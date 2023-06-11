@@ -25,11 +25,10 @@ func TestBitLength_CreateCommitment(t *testing.T) {
 		if commitment.BitLen() == int(hex_len) {
 			commit_len++
 		}
-		if len(blind_factor.Bytes()) == 256 {
+		if len(blind_factor.Bytes()) == 512 {
 			blind_len++
 		}
 	}
-
 	assert.Greater(t, float32(commit_len)/float32(sample_size), float32(0.3))
 	assert.Greater(t, float32(blind_len)/float32(sample_size), float32(0.3))
 }
