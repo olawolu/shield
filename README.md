@@ -1,37 +1,10 @@
-# tss-lib
+# Shield
 
-Contains methods to facilitate two party ecdsa threshold signing scheme
+This is a golang implementation of threshold ECDSA between two parties. Adapted from [ZenGo-X/multi-party-ecdsa](https://github.com/ZenGo-X/multi-party-ecdsa).
 
-## DKG
+Threshold ECDSA consists of two protocols:
 
-Each party
+- Key generation to generate the key shares
+- Signing to use the key shares to generate a signature.
 
-- generates a random x, computes Q=x.G where G is the generator of the curve
-- creates a comittment to Q
-- a zk proof of knowledge of x and the discrete log of Q
-- the committments and proofs are shared among parties
-
-## Signing
-
-An example ethereum transaction
-
-```json
-{
-    "transaction": {
-        "chainId": 1,
-        "nonce": 0,
-        "maxFeePerGas": "0x000000",
-        "maxPriorityFeePerGas": "0x000000",
-        "gasLimit": "0x000000",
-        "destination": "0x000000",
-        "amount": "0x000000",
-        "data": "0x000000",
-    }
-}
-```
-
-### What happens during signing
-
-- RLP encode the transaction
-- hash the RLP encoded transaction
-- run the signing process on the hash
+Here is an overview of [Threshold signatures](https://academy.binance.com/en/articles/threshold-signatures-explained)
