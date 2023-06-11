@@ -1,4 +1,4 @@
-package ecdsa
+package shield
 
 import (
 	"crypto/elliptic"
@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
-	"github.com/helicarrierstudio/tss-lib/cryptoutils"
+	"github.com/olawolu/shield/cryptoutils"
 )
 
 func NewKeyWithProof() (*secp256k1.PrivateKey, *cryptoutils.DlogProof, error) {

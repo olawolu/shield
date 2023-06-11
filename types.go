@@ -1,11 +1,11 @@
-package ecdsa
+package shield
 
 import (
 	"math/big"
 
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
-	"github.com/helicarrierstudio/tss-lib/cryptoutils"
+	"github.com/olawolu/shield/cryptoutils"
 )
 
 // KeyGenFirstMsg is the first message sent during key generation.

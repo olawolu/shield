@@ -1,4 +1,4 @@
-package ecdsa
+package shield
 
 import (
 	"crypto/rand"
@@ -9,7 +9,7 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/helicarrierstudio/tss-lib/cryptoutils"
+	"github.com/olawolu/shield/cryptoutils"
 )
 
 func CreatePartyTwoShares() (fm P2KeyGenFirstMsg, secret []byte, err error) {

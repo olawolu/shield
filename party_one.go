@@ -1,4 +1,4 @@
-package ecdsa
+package shield
 
 import (
 	"crypto/ecdsa"
@@ -10,7 +10,7 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/didiercrunch/paillier"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/helicarrierstudio/tss-lib/cryptoutils"
+	"github.com/olawolu/shield/cryptoutils"
 	"golang.org/x/crypto/cryptobyte"
 	"golang.org/x/crypto/cryptobyte/asn1"
 )
