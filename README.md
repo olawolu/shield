@@ -8,3 +8,8 @@ Threshold ECDSA consists of two protocols:
 - Signing to use the key shares to generate a signature.
 
 Here is an overview of [Threshold signatures](https://academy.binance.com/en/articles/threshold-signatures-explained)
+
+Papers:
+
+- https://eprint.iacr.org/2017/552.pdf
+- https://eprint.iacr.org/2019/114.pdf
